@@ -332,7 +332,6 @@
     async function searchMovie() {
       const query = document.getElementById("searchInput").value.trim();
       const searchResultsDiv = document.getElementById("searchResults");
-      searchResultsDiv.style.display = "none";
       searchResultsDiv.innerHTML = "";
 
       if (!query) return alert("Enter a movie name or IMDb ID!");
@@ -341,6 +340,7 @@
       const imdbRegex = /^tt\d{7,9}$/;
       if (imdbRegex.test(query)) {
         loadDetails(query);
+        searchResultsDiv.style.display = "none";
         return;
       }
 
@@ -368,6 +368,7 @@
           searchResultsDiv.appendChild(div);
         });
       } else {
+        searchResultsDiv.style.display = "none";
         alert("No results found!");
       }
     }
