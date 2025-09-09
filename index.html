@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movies</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #141414;
+      color: #fff;
+    }
+    header {
+      background: #000;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: #e50914;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .video-wrapper {
+      width: 90%;
+      max-width: 1000px;
+      margin-bottom: 20px;
+    }
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 8px;
+    }
+    .movie-info {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .movie-info img {
+      margin-top: 10px;
+      border-radius: 8px;
+      max-width: 200px;
+    }
+    .carousel {
+      width: 90%;
+      max-width: 1000px;
+      overflow-x: auto;
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      scroll-behavior: smooth;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel-item {
+      flex: 0 0 auto;
+      width: 150px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .carousel-item:hover {
+      transform: scale(1.1);
+    }
+    .carousel-item img {
+      width: 100%;
+      border-radius: 8px;
+    }
+    .carousel-item p {
+      font-size: 14px;
+      text-align: center;
+      margin-top: 5px;
+    }
+    /* Search bar */
+    .search-box {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .search-box input, .search-box select {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    .search-box button {
+      padding: 10px 15px;
+      background: #e50914;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .search-box button:hover {
+      background: #b20710;
+    }
+    /* Episode selector */
+    .episodes {
+      margin: 20px;
+      text-align: center;
+    }
+    .episodes select {
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🎬 Movies</header>
+
+  <div class="container">
+    <!-- Search Bar -->
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search movies...">
+      <select id="providerSelect">
+      </select>
+      <button onclick="searchMovie()">🔍 Search</button>
+    </div>
+
+    <!-- Video Player -->
+    <div class="video-wrapper">
+      <iframe id="videoFrame" src="" allowfullscreen></iframe>
+    </div>
+
+    <!-- Movie Info -->
+    <div class="movie-info" id="movieInfo"></div>
+
+
+
+    <!-- Trending Carousel -->
+    <h2 style="margin-top:30px;">🔥 Trending Movies</h2>
+    <div class="carousel" id="carousel"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const frame = document.getElementById("videoFrame");
+    const movieInfo = document.getElementById("movieInfo");
+    const carousel = document.getElementById("carousel");
+    let currentImdb = null;
+    let currentId = null;
+
+    // Fetch trending movies
+    async function loadTrending() {
+      const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      data.results.forEach(item => {
+        if (!item.poster_path) return;
+        const div = document.createElement("div");
+        div.className = "carousel-item";
+        div.innerHTML = `
+          <img src="${IMG_PATH + item.poster_path}" alt="${item.title}">
+          <p>${item.title}</p>
+        `;
+        div.onclick = () => loadDetails(item.id);
+        carousel.appendChild(div);
+      });
+    }
+
+    // Load details + play via IMDb ID
+    async function loadDetails(id) {
+      currentId = id;
+
+      const detailsURL = `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=en-US`;
+      const detailsRes = await fetch(detailsURL);
+      const details = await detailsRes.json();
+
+      const idsURL = `https://api.themoviedb.org/3/movie/${id}/external_ids?api_key=${TMDB_KEY}`;
+      const idsRes = await fetch(idsURL);
+      const ids = await idsRes.json();
+
+      currentImdb = ids.imdb_id;
+
+      if (ids.imdb_id) {
+        playContent(ids.imdb_id);
+      } else {
+        frame.src = "";
+        alert("No IMDb ID available for this movie!");
+      }
+
+      movieInfo.innerHTML = `
+        <h2>${details.title} (${(details.release_date || "").split("-")[0]})</h2>
+        <p><strong>Genres:</strong> ${details.genres.map(g => g.name).join(", ")}</p>
+        <p><strong>Overview:</strong> ${details.overview}</p>
+        <img src="${IMG_PATH + details.poster_path}" alt="Poster">
+      `;
+    }
+
+    // Play content
+    const providerSelect = document.getElementById("providerSelect");
+    providers.forEach(p => {
+      let opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      providerSelect.appendChild(opt);
+    });
+
+    function getEmbed(imdb, p){
+      let base = "";
+      switch(p){
+        case "vidsrc.me": base = `https://vidsrc.me/embed/${imdb}`; break;
+        case "vidsrc.cc": base = `https://vidsrc.cc/v2/embed/${imdb}`; break;
+        case "vidsrc.vip": base = `https://vidsrc.vip/embed/${imdb}`; break;
+        case "vidlink.pro": base = `https://vidlink.pro/movie/${imdb}`; break;
+        case "vidrock.net": base = `https://vidrock.net/embed/movie/${imdb}`; break;
+        case "kisskh.co": base = `https://kisskh.co/embed/${imdb}`; break;
+        case "filmxy.online": base = `https://filmxy.online/embed/${imdb}`; break;
+        case "smashystream": base = `https://smashystream.com/embed/${imdb}`; break;
+        case "vidfast.pro": base = `https://vidfast.pro/embed/${imdb}`; break;
+        case "fmovies.gd": base = `https://fmovies.gd/embed/${imdb}`; break;
+        default: base = `https://vidsrc.me/embed/${imdb}`;
+      }
+      return base;
+    }
+
+    function testProvider(url) {
+      return new Promise((resolve, reject) => {
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.style.display = "none";
+        iframe.onload = () => resolve(true);
+        iframe.onerror = () => reject(false);
+        document.body.appendChild(iframe);
+        setTimeout(() => reject(false), 10000); // 10s timeout
+      });
+    }
+
+    async function autoSelectProvider(imdb) {
+      for (let p of providers) {
+        const url = getEmbed(imdb, p);
+        try {
+          await testProvider(url);
+          providerSelect.value = p;
+          return url;
+        } catch (e) {
+          console.log(`Provider failed: ${p}`);
+        }
+      }
+      return getEmbed(imdb, "vidsrc.me");
+    }
+
+    async function playContent(imdb) {
+      let url = await autoSelectProvider(imdb);
+      frame.src = url;
+    }
+
+    // Search movies
+    async function searchMovie() {
+      const query = document.getElementById("searchInput").value.trim();
+      if (!query) return alert("Enter a movie name!");
+
+      const searchURL = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}`;
+      const res = await fetch(searchURL);
+      const data = await res.json();
+
+      if (data.results.length > 0) {
+        const first = data.results[0];
+        loadDetails(first.id);
+      } else {
+        alert("No results found!");
+      }
+    }
+
+    loadTrending();
+  </script>
+</body>
+</html>
