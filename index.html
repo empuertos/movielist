@@ -53,6 +53,7 @@
       justify-content: center;
       gap: 10px;
       position: relative;
+      flex-wrap: wrap;
     }
     .search-box input {
       padding: 12px 15px;
@@ -91,6 +92,27 @@
     }
     .search-box button:hover {
       background: #b20710;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .search-box input {
+        width: 100%;
+        max-width: 300px;
+      }
+      .search-box select {
+        width: 100px;
+      }
+      .search-box button {
+        width: 100%;
+        max-width: 150px;
+      }
+      .video-wrapper iframe {
+        height: 300px;
+      }
+      .movie-info img {
+        max-width: 150px;
+      }
     }
     /* Episode selector */
     .episodes {
