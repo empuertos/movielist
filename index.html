@@ -110,6 +110,42 @@
       font-size: 16px;
       border-radius: 5px;
     }
+    /* Search results */
+    .search-results {
+      width: 90%;
+      max-width: 1000px;
+      background: #222;
+      border-radius: 5px;
+      margin-top: 10px;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .search-result-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .search-result-item:hover {
+      background: #333;
+    }
+    .search-result-item img {
+      width: 50px;
+      border-radius: 5px;
+    }
+    .search-result-item .info {
+      flex: 1;
+    }
+    .search-result-item .title {
+      font-weight: bold;
+    }
+    .search-result-item .year {
+      font-size: 12px;
+      color: #ccc;
+    }
   </style>
 </head>
 <body>
@@ -124,6 +160,9 @@
       </select>
       <button onclick="searchMovie()">🔍 Search</button>
     </div>
+
+    <!-- Search Results -->
+    <div class="search-results" id="searchResults"></div>
 
     <!-- Video Player -->
     <div class="video-wrapper">
@@ -257,6 +296,10 @@
     // Search movies
     async function searchMovie() {
       const query = document.getElementById("searchInput").value.trim();
+      const searchResultsDiv = document.getElementById("searchResults");
+      searchResultsDiv.style.display = "none";
+      searchResultsDiv.innerHTML = "";
+
       if (!query) return alert("Enter a movie name!");
 
       const searchURL = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}`;
@@ -264,8 +307,24 @@
       const data = await res.json();
 
       if (data.results.length > 0) {
-        const first = data.results[0];
-        loadDetails(first.id);
+        // Show search results list
+        searchResultsDiv.style.display = "block";
+        data.results.forEach(movie => {
+          const div = document.createElement("div");
+          div.className = "search-result-item";
+          div.innerHTML = `
+            <img src="${movie.poster_path ? IMG_PATH + movie.poster_path : ''}" alt="${movie.title}">
+            <div class="info">
+              <div class="title">${movie.title}</div>
+              <div class="year">${movie.release_date ? movie.release_date.split("-")[0] : ''}</div>
+            </div>
+          `;
+          div.onclick = () => {
+            loadDetails(movie.id);
+            searchResultsDiv.style.display = "none";
+          };
+          searchResultsDiv.appendChild(div);
+        });
       } else {
         alert("No results found!");
       }
