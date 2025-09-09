@@ -197,6 +197,10 @@
     const movieInfo = document.getElementById("movieInfo");
     let currentImdb = null;
     let currentType = "movie";
+    let currentSeason = 1;
+    let currentEpisode = 1;
+    let episodes = [];
+    let autoNextTimer = null;
 
     // Load details + play via IMDb ID
     async function loadDetails(imdbid) {
@@ -252,7 +256,7 @@
         case "vidsrc.cc": base = `https://vidsrc.cc/v2/embed/${imdb}`; break;
         case "vidsrc.vip": base = `https://vidsrc.vip/embed/${imdb}`; break;
         case "vidlink.pro": base = type === "movie" ? `https://vidlink.pro/movie/${imdb}` : `https://vidlink.pro/tv/${imdb}/${season}/${episode}`; break;
-        case "vidrock.net": base = `https://vidrock.net/embed/movie/${imdb}`; break;
+        case "vidrock.net": base = type === "movie" ? `https://vidrock.net/embed/movie/${imdb}` : `https://vidrock.net/embed/tv/${imdb}/${season}/${episode}`; break;
         case "kisskh.co": base = `https://kisskh.co/embed/${imdb}`; break;
         case "filmxy.online": base = `https://filmxy.online/embed/${imdb}`; break;
         case "smashystream": base = `https://smashystream.com/embed/${imdb}`; break;
@@ -260,7 +264,7 @@
         case "fmovies.gd": base = `https://fmovies.gd/embed/${imdb}`; break;
         default: base = `https://vidsrc.me/embed/${imdb}`;
       }
-      if (type === "series") {
+      if (type === "series" && p !== "vidlink.pro" && p !== "vidrock.net") {
         base += `/${season}/${episode}`;
       }
       return base;
@@ -344,7 +348,7 @@
             <img src="${movie.Poster !== "N/A" ? movie.Poster : ''}" alt="${movie.Title}">
             <div class="info">
               <div class="title">${movie.Title}</div>
-              <div class="year">${movie.Year}</div>
+              <div class="year">${movie.Year} - ${movie.Type}</div>
             </div>
           `;
           div.onclick = () => {
