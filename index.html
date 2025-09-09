@@ -186,8 +186,8 @@
     <!-- Movie Info -->
     <div class="movie-info" id="movieInfo"></div>
 
-
-
+    <!-- Episode selector -->
+    <div class="episodes" id="episodes"></div>
 
   </div>
 
@@ -215,6 +215,13 @@
         // Check if type is movie or series
         if (details.Type === "movie" || details.Type === "series") {
           playContent(imdbid);
+          if (details.Type === "series") {
+            // Show episode selector for series
+            showEpisodeSelector(imdbid);
+          } else {
+            // Hide episode selector for movies
+            document.getElementById("episodes").innerHTML = "";
+          }
         } else {
           frame.src = "";
           alert("Content type not supported!");
@@ -236,6 +243,81 @@
       `;
     }
 
+    // Show episode selector for series
+    async function showEpisodeSelector(imdbid) {
+      const episodesDiv = document.getElementById("episodes");
+      episodesDiv.innerHTML = "<p>Loading episodes...</p>";
+
+      // Fetch season and episode info from OMDB
+      const seasonURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}&plot=full`;
+      const seasonRes = await fetch(seasonURL);
+      const seasonData = await seasonRes.json();
+
+      // For simplicity, assume max 10 seasons if not provided
+      let maxSeasons = 10;
+      if (seasonData.totalSeasons) {
+        maxSeasons = parseInt(seasonData.totalSeasons);
+      }
+
+      // Create season selector
+      let seasonSelect = document.createElement("select");
+      seasonSelect.id = "seasonSelect";
+      for (let i = 1; i <= maxSeasons; i++) {
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = "Season " + i;
+        seasonSelect.appendChild(option);
+      }
+
+      // Create episode selector
+      let episodeSelect = document.createElement("select");
+      episodeSelect.id = "episodeSelect";
+
+      // Load episodes for selected season
+      async function loadEpisodes(season) {
+        episodeSelect.innerHTML = "";
+        // Fetch episodes for season
+        const episodesURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}&Season=${season}`;
+        const episodesRes = await fetch(episodesURL);
+        const episodesData = await episodesRes.json();
+
+        if (episodesData.Episodes) {
+          episodesData.Episodes.forEach(ep => {
+            let option = document.createElement("option");
+            option.value = ep.Episode;
+            option.textContent = `Episode ${ep.Episode}: ${ep.Title}`;
+            episodeSelect.appendChild(option);
+          });
+        } else {
+          let option = document.createElement("option");
+          option.value = 1;
+          option.textContent = "Episode 1";
+          episodeSelect.appendChild(option);
+        }
+      }
+
+      // Load initial episodes for season 1
+      await loadEpisodes(1);
+
+      // Update episodes when season changes
+      seasonSelect.addEventListener("change", async (e) => {
+        await loadEpisodes(e.target.value);
+        currentSeason = parseInt(e.target.value);
+        currentEpisode = 1;
+        playContent(currentImdb);
+      });
+
+      // Update video when episode changes
+      episodeSelect.addEventListener("change", (e) => {
+        currentEpisode = parseInt(e.target.value);
+        playContent(currentImdb);
+      });
+
+      episodesDiv.innerHTML = "";
+      episodesDiv.appendChild(seasonSelect);
+      episodesDiv.appendChild(episodeSelect);
+    }
+
     // Play content
     const providerSelect = document.getElementById("providerSelect");
     providers.forEach(p => {
@@ -249,23 +331,41 @@
       providerSelect.value = "vidrock.net";
     }
 
-    function getEmbed(imdb, p, type = "movie", season = 1, episode = 1){
+    function getEmbed(imdb, p, type = "movie", season = currentSeason, episode = currentEpisode){
       let base = "";
       switch(p){
-        case "vidsrc.me": base = `https://vidsrc.me/embed/${imdb}`; break;
-        case "vidsrc.cc": base = `https://vidsrc.cc/v2/embed/${imdb}`; break;
-        case "vidsrc.vip": base = `https://vidsrc.vip/embed/${imdb}`; break;
-        case "vidlink.pro": base = type === "movie" ? `https://vidlink.pro/movie/${imdb}` : `https://vidlink.pro/tv/${imdb}/${season}/${episode}`; break;
-        case "vidrock.net": base = type === "movie" ? `https://vidrock.net/embed/movie/${imdb}` : `https://vidrock.net/embed/tv/${imdb}/${season}/${episode}`; break;
-        case "kisskh.co": base = `https://kisskh.co/embed/${imdb}`; break;
-        case "filmxy.online": base = `https://filmxy.online/embed/${imdb}`; break;
-        case "smashystream": base = `https://smashystream.com/embed/${imdb}`; break;
-        case "vidfast.pro": base = `https://vidfast.pro/embed/${imdb}`; break;
-        case "fmovies.gd": base = `https://fmovies.gd/embed/${imdb}`; break;
-        default: base = `https://vidsrc.me/embed/${imdb}`;
-      }
-      if (type === "series" && p !== "vidlink.pro" && p !== "vidrock.net") {
-        base += `/${season}/${episode}`;
+        case "vidsrc.me": 
+          base = type === "movie" ? `https://vidsrc.me/embed/${imdb}` : `https://vidsrc.me/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "vidsrc.cc": 
+          base = type === "movie" ? `https://vidsrc.cc/v2/embed/${imdb}` : `https://vidsrc.cc/v2/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "vidsrc.vip": 
+          base = type === "movie" ? `https://vidsrc.vip/embed/${imdb}` : `https://vidsrc.vip/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "vidlink.pro": 
+          base = type === "movie" ? `https://vidlink.pro/movie/${imdb}` : `https://vidlink.pro/tv/${imdb}/${season}/${episode}`;
+          break;
+        case "vidrock.net": 
+          base = type === "movie" ? `https://vidrock.net/embed/movie/${imdb}` : `https://vidrock.net/embed/tv/${imdb}/${season}/${episode}`;
+          break;
+        case "kisskh.co": 
+          base = type === "movie" ? `https://kisskh.co/embed/${imdb}` : `https://kisskh.co/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "filmxy.online": 
+          base = type === "movie" ? `https://filmxy.online/embed/${imdb}` : `https://filmxy.online/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "smashystream": 
+          base = type === "movie" ? `https://smashystream.com/embed/${imdb}` : `https://smashystream.com/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "vidfast.pro": 
+          base = type === "movie" ? `https://vidfast.pro/embed/${imdb}` : `https://vidfast.pro/embed/${imdb}/${season}/${episode}`;
+          break;
+        case "fmovies.gd": 
+          base = type === "movie" ? `https://fmovies.gd/embed/${imdb}` : `https://fmovies.gd/embed/${imdb}/${season}/${episode}`;
+          break;
+        default: 
+          base = type === "movie" ? `https://vidsrc.me/embed/${imdb}` : `https://vidsrc.me/embed/${imdb}/${season}/${episode}`;
       }
       return base;
     }
@@ -334,29 +434,29 @@
         return;
       }
 
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
       if (data.Search && data.Search.length > 0) {
         searchResultsDiv.style.display = "block";
-        // Filter to movies only and sort by year descending (newest first)
-        const movieResults = data.Search.filter(item => item.Type === "movie").sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
-        const limitedResults = movieResults.slice(0, 8); // Limit to 8 suggestions
-        limitedResults.forEach(movie => {
+        // Sort by year descending (newest first)
+        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        const limitedResults = sortedResults.slice(0, 8); // Limit to 8 suggestions
+        limitedResults.forEach(item => {
           const div = document.createElement("div");
           div.className = "search-result-item";
           div.innerHTML = `
-            <img src="${movie.Poster !== "N/A" ? movie.Poster : ''}" alt="${movie.Title}">
+            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
             <div class="info">
-              <div class="title">${movie.Title}</div>
-              <div class="year">${movie.Year}</div>
+              <div class="title">${item.Title}</div>
+              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
             </div>
           `;
           div.onclick = () => {
-            loadDetails(movie.imdbID);
+            loadDetails(item.imdbID);
             searchResultsDiv.style.display = "none";
-            document.getElementById("searchInput").value = movie.Title;
+            document.getElementById("searchInput").value = item.Title;
           };
           searchResultsDiv.appendChild(div);
         });
@@ -384,27 +484,27 @@
         return;
       }
 
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
       if (data.Search && data.Search.length > 0) {
         // Show search results list
         searchResultsDiv.style.display = "block";
-        // Filter to movies only and sort by year descending (newest first)
-        const movieResults = data.Search.filter(item => item.Type === "movie").sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
-        movieResults.forEach(movie => {
+        // Sort by year descending (newest first)
+        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        sortedResults.forEach(item => {
           const div = document.createElement("div");
           div.className = "search-result-item";
           div.innerHTML = `
-            <img src="${movie.Poster !== "N/A" ? movie.Poster : ''}" alt="${movie.Title}">
+            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
             <div class="info">
-              <div class="title">${movie.Title}</div>
-              <div class="year">${movie.Year}</div>
+              <div class="title">${item.Title}</div>
+              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
             </div>
           `;
           div.onclick = () => {
-            loadDetails(movie.imdbID);
+            loadDetails(item.imdbID);
             searchResultsDiv.style.display = "none";
           };
           searchResultsDiv.appendChild(div);
