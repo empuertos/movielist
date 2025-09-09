@@ -334,13 +334,15 @@
         return;
       }
 
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
       if (data.Search && data.Search.length > 0) {
         searchResultsDiv.style.display = "block";
-        const limitedResults = data.Search.slice(0, 8); // Limit to 8 suggestions
+        // Filter to movies only and sort by year descending (newest first)
+        const movieResults = data.Search.filter(item => item.Type === "movie").sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        const limitedResults = movieResults.slice(0, 8); // Limit to 8 suggestions
         limitedResults.forEach(movie => {
           const div = document.createElement("div");
           div.className = "search-result-item";
@@ -348,7 +350,7 @@
             <img src="${movie.Poster !== "N/A" ? movie.Poster : ''}" alt="${movie.Title}">
             <div class="info">
               <div class="title">${movie.Title}</div>
-              <div class="year">${movie.Year} - ${movie.Type}</div>
+              <div class="year">${movie.Year}</div>
             </div>
           `;
           div.onclick = () => {
@@ -382,14 +384,16 @@
         return;
       }
 
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
       if (data.Search && data.Search.length > 0) {
         // Show search results list
         searchResultsDiv.style.display = "block";
-        data.Search.forEach(movie => {
+        // Filter to movies only and sort by year descending (newest first)
+        const movieResults = data.Search.filter(item => item.Type === "movie").sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        movieResults.forEach(movie => {
           const div = document.createElement("div");
           div.className = "search-result-item";
           div.innerHTML = `
