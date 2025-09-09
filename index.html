@@ -174,6 +174,7 @@
     const frame = document.getElementById("videoFrame");
     const movieInfo = document.getElementById("movieInfo");
     let currentImdb = null;
+    let currentType = "movie";
 
     // Load details + play via IMDb ID
     async function loadDetails(imdbid) {
@@ -184,6 +185,7 @@
       const details = await detailsRes.json();
 
       if (details.Response === "True") {
+        currentType = details.Type;
         // Check if type is movie or series
         if (details.Type === "movie" || details.Type === "series") {
           playContent(imdbid);
@@ -221,13 +223,13 @@
       providerSelect.value = "vidrock.net";
     }
 
-    function getEmbed(imdb, p){
+    function getEmbed(imdb, p, type = "movie", season = 1, episode = 1){
       let base = "";
       switch(p){
         case "vidsrc.me": base = `https://vidsrc.me/embed/${imdb}`; break;
         case "vidsrc.cc": base = `https://vidsrc.cc/v2/embed/${imdb}`; break;
         case "vidsrc.vip": base = `https://vidsrc.vip/embed/${imdb}`; break;
-        case "vidlink.pro": base = `https://vidlink.pro/movie/${imdb}`; break;
+        case "vidlink.pro": base = type === "movie" ? `https://vidlink.pro/movie/${imdb}` : `https://vidlink.pro/tv/${imdb}/${season}/${episode}`; break;
         case "vidrock.net": base = `https://vidrock.net/embed/movie/${imdb}`; break;
         case "kisskh.co": base = `https://kisskh.co/embed/${imdb}`; break;
         case "filmxy.online": base = `https://filmxy.online/embed/${imdb}`; break;
@@ -235,6 +237,9 @@
         case "vidfast.pro": base = `https://vidfast.pro/embed/${imdb}`; break;
         case "fmovies.gd": base = `https://fmovies.gd/embed/${imdb}`; break;
         default: base = `https://vidsrc.me/embed/${imdb}`;
+      }
+      if (type === "series") {
+        base += `/${season}/${episode}`;
       }
       return base;
     }
@@ -251,11 +256,11 @@
       });
     }
 
-    async function autoSelectProvider(imdb) {
+    async function autoSelectProvider(imdb, type = "movie") {
       const selectedProvider = providerSelect.value;
       // First, try the user-selected provider
       if (selectedProvider) {
-        const url = getEmbed(imdb, selectedProvider);
+        const url = getEmbed(imdb, selectedProvider, type);
         try {
           await testProvider(url);
           return url;
@@ -267,7 +272,7 @@
       // If selected fails or none selected, try others
       for (let p of providers) {
         if (p === selectedProvider) continue; // Skip if already tried
-        const url = getEmbed(imdb, p);
+        const url = getEmbed(imdb, p, type);
         try {
           await testProvider(url);
           providerSelect.value = p;
@@ -276,11 +281,11 @@
           console.log(`Provider failed: ${p}`);
         }
       }
-      return getEmbed(imdb, "vidsrc.me");
+      return getEmbed(imdb, "vidsrc.me", type);
     }
 
     async function playContent(imdb) {
-      let url = await autoSelectProvider(imdb);
+      let url = await autoSelectProvider(imdb, currentType);
       frame.src = url;
     }
 
