@@ -179,7 +179,7 @@
     async function loadDetails(imdbid) {
       currentImdb = imdbid;
 
-      const detailsURL = `http://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}`;
+      const detailsURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}`;
       const detailsRes = await fetch(detailsURL);
       const details = await detailsRes.json();
 
@@ -296,7 +296,7 @@
         return;
       }
 
-      const searchURL = `http://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
@@ -344,7 +344,7 @@
         return;
       }
 
-      const searchURL = `http://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
+      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
