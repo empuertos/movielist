@@ -184,7 +184,14 @@
       const details = await detailsRes.json();
 
       if (details.Response === "True") {
-        playContent(imdbid);
+        // Check if type is movie or series
+        if (details.Type === "movie" || details.Type === "series") {
+          playContent(imdbid);
+        } else {
+          frame.src = "";
+          alert("Content type not supported!");
+          return;
+        }
       } else {
         frame.src = "";
         alert("Movie not found!");
