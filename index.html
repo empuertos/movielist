@@ -421,6 +421,13 @@
       debouncedFetchSuggestions(e.target.value);
     });
 
+    // Auto-update video when provider changes
+    document.getElementById("providerSelect").addEventListener("change", () => {
+      if (currentImdb) {
+        playContent(currentImdb);
+      }
+    });
+
     // Hide suggestions when clicking outside
     document.addEventListener("click", (e) => {
       const searchResultsDiv = document.getElementById("searchResults");
