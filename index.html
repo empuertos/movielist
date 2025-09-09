@@ -176,7 +176,7 @@
   <div class="container">
     <!-- Search Bar -->
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Search movies...">
+      <input type="text" id="searchInput" placeholder="Search movies or enter IMDb ID...">
       <select id="providerSelect">
       </select>
       <button onclick="searchMovie()">🔍 Search</button>
@@ -195,64 +195,38 @@
 
 
 
-    <!-- Trending Carousel -->
-    <h2 style="margin-top:30px;">🔥 Trending Movies</h2>
-    <div class="carousel" id="carousel"></div>
+
   </div>
 
   <script src="config.js"></script>
   <script>
     const frame = document.getElementById("videoFrame");
     const movieInfo = document.getElementById("movieInfo");
-    const carousel = document.getElementById("carousel");
     let currentImdb = null;
-    let currentId = null;
-
-    // Fetch trending movies
-    async function loadTrending() {
-      const url = `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      data.results.forEach(item => {
-        if (!item.poster_path) return;
-        const div = document.createElement("div");
-        div.className = "carousel-item";
-        div.innerHTML = `
-          <img src="${IMG_PATH + item.poster_path}" alt="${item.title}">
-          <p>${item.title}</p>
-        `;
-        div.onclick = () => loadDetails(item.id);
-        carousel.appendChild(div);
-      });
-    }
 
     // Load details + play via IMDb ID
-    async function loadDetails(id) {
-      currentId = id;
+    async function loadDetails(imdbid) {
+      currentImdb = imdbid;
 
-      const detailsURL = `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=en-US`;
+      const detailsURL = `http://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}`;
       const detailsRes = await fetch(detailsURL);
       const details = await detailsRes.json();
 
-      const idsURL = `https://api.themoviedb.org/3/movie/${id}/external_ids?api_key=${TMDB_KEY}`;
-      const idsRes = await fetch(idsURL);
-      const ids = await idsRes.json();
-
-      currentImdb = ids.imdb_id;
-
-      if (ids.imdb_id) {
-        playContent(ids.imdb_id);
+      if (details.Response === "True") {
+        playContent(imdbid);
       } else {
         frame.src = "";
-        alert("No IMDb ID available for this movie!");
+        alert("Movie not found!");
+        return;
       }
 
       movieInfo.innerHTML = `
-        <h2>${details.title} (${(details.release_date || "").split("-")[0]})</h2>
-        <p><strong>Genres:</strong> ${details.genres.map(g => g.name).join(", ")}</p>
-        <p><strong>Overview:</strong> ${details.overview}</p>
-        <img src="${IMG_PATH + details.poster_path}" alt="Poster">
+        <h2>${details.Title} (${details.Year})</h2>
+        <p><strong>Genre:</strong> ${details.Genre}</p>
+        <p><strong>Plot:</strong> ${details.Plot}</p>
+        <p><strong>Director:</strong> ${details.Director}</p>
+        <p><strong>Actors:</strong> ${details.Actors}</p>
+        <img src="${details.Poster !== "N/A" ? details.Poster : ''}" alt="Poster">
       `;
     }
 
@@ -264,6 +238,10 @@
       opt.textContent = p;
       providerSelect.appendChild(opt);
     });
+    // Prefer vidrock.net as default
+    if (providers.includes("vidrock.net")) {
+      providerSelect.value = "vidrock.net";
+    }
 
     function getEmbed(imdb, p){
       let base = "";
