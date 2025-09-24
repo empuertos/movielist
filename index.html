@@ -200,11 +200,12 @@
       "vidsrc.vip",
       "vidlink.pro",
       "vidrock.net",
-      "kisskh.co",
-      "filmxy.online",
-      "smashystream",
       "vidfast.pro",
-      "fmovies.gd"
+      "autoembed.cc",
+      "embed.su",
+      "111movies.com",
+      "player.videasy.net",
+      "vidsrc.to"
     ];
     const frame = document.getElementById("videoFrame");
     const movieInfo = document.getElementById("movieInfo");
@@ -344,43 +345,42 @@
       providerSelect.value = "vidrock.net";
     }
 
-    function getEmbed(imdb, p, type = "movie", season = currentSeason, episode = currentEpisode){
-      let base = "";
-      switch(p){
-        case "vidsrc.me": 
-          base = type === "movie" ? `https://vidsrc.me/embed/${imdb}` : `https://vidsrc.me/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "vidsrc.cc": 
-          base = type === "movie" ? `https://vidsrc.cc/v2/embed/${imdb}` : `https://vidsrc.cc/v2/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "vidsrc.vip": 
-          base = type === "movie" ? `https://vidsrc.vip/embed/${imdb}` : `https://vidsrc.vip/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "vidlink.pro": 
-          base = type === "movie" ? `https://vidlink.pro/movie/${imdb}` : `https://vidlink.pro/tv/${imdb}/${season}/${episode}`;
-          break;
-        case "vidrock.net": 
-          base = type === "movie" ? `https://vidrock.net/embed/movie/${imdb}` : `https://vidrock.net/embed/tv/${imdb}/${season}/${episode}`;
-          break;
-        case "kisskh.co": 
-          base = type === "movie" ? `https://kisskh.co/embed/${imdb}` : `https://kisskh.co/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "filmxy.online": 
-          base = type === "movie" ? `https://filmxy.online/embed/${imdb}` : `https://filmxy.online/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "smashystream": 
-          base = type === "movie" ? `https://smashystream.com/embed/${imdb}` : `https://smashystream.com/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "vidfast.pro": 
-          base = type === "movie" ? `https://vidfast.pro/embed/${imdb}` : `https://vidfast.pro/embed/${imdb}/${season}/${episode}`;
-          break;
-        case "fmovies.gd": 
-          base = type === "movie" ? `https://fmovies.gd/embed/${imdb}` : `https://fmovies.gd/embed/${imdb}/${season}/${episode}`;
-          break;
-        default: 
-          base = type === "movie" ? `https://vidsrc.me/embed/${imdb}` : `https://vidsrc.me/embed/${imdb}/${season}/${episode}`;
-      }
-      return base;
+    function generateEmbedUrl(provider, imdbId, type, season = 1, episode = 1) {
+      const baseUrls = {
+        'vidsrc.cc': type === 'series'
+          ? `https://vidsrc.cc/v2/embed/tv/${imdbId}/${season}?ads=0&disable_ads=1`
+          : `https://vidsrc.cc/v2/embed/movie/${imdbId}?ads=0&disable_ads=1`,
+        'vidrock.net': type === 'series'
+          ? `https://vidrock.net/tv/${imdbId}/${season}/${episode}?ads=0&disable_ads=1`
+          : `https://vidrock.net/movie/${imdbId}?ads=0&disable_ads=1`,
+        'vidsrc.me': `https://vidsrc.me/embed/${type}/${imdbId}?ads=0&disable_ads=1`,
+        'vidfast.pro': type === 'series'
+          ? `https://vidfast.pro/tv/${imdbId}/${season}/${episode}?autoPlay=true&ads=0&disable_ads=1`
+          : `https://vidfast.pro/movie/${imdbId}?autoPlay=true&ads=0&disable_ads=1`,
+        'autoembed.cc': type === 'series'
+          ? `https://player.autoembed.cc/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://player.autoembed.cc/embed/movie/${imdbId}`,
+        'embed.su': type === 'series'
+          ? `https://embed.su/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://embed.su/embed/movie/${imdbId}`,
+        '111movies.com': type === 'series'
+          ? `https://111movies.com/tv/${imdbId}/${season}/${episode}`
+          : `https://111movies.com/movie/${imdbId}`,
+        'vidlink.pro': type === 'series'
+          ? `https://vidlink.pro/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://vidlink.pro/anime/${imdbId}/${episode}/sub?fallback=true`
+          : `https://vidlink.pro/movie/${imdbId}`,
+        'player.videasy.net': type === 'series'
+          ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://player.videasy.net/anime/${imdbId}/${episode}?dub=false`
+          : `https://player.videasy.net/movie/${imdbId}`,
+        'vidsrc.to': type === 'series'
+          ? `https://vidsrc.to/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://vidsrc.to/embed/movie/${imdbId}`
+      };
+      return baseUrls[provider] || null;
     }
 
     function testProvider(url) {
@@ -411,7 +411,7 @@
       // If selected fails or none selected, try others
       for (let p of providers) {
         if (p === selectedProvider) continue; // Skip if already tried
-        const url = getEmbed(imdb, p, type);
+        const url = generateEmbedUrl(p, imdb, type);
         try {
           await testProvider(url);
           providerSelect.value = p;
@@ -420,7 +420,7 @@
           console.log(`Provider failed: ${p}`);
         }
       }
-      return getEmbed(imdb, "vidsrc.me", type);
+      return generateEmbedUrl("vidsrc.me", imdb, type);
     }
 
     async function playContent(imdb) {
