@@ -69,6 +69,15 @@
     .search-box input:focus {
       border-color: #e50914;
     }
+    .search-box input::placeholder {
+      color: #888;
+    }
+    .loading {
+      display: none;
+      color: #e50914;
+      font-size: 14px;
+      margin-top: 10px;
+    }
     .search-box select {
       padding: 12px;
       border-radius: 25px;
@@ -174,6 +183,7 @@
       </select>
       <button onclick="searchMovie()">🔍 Search</button>
     </div>
+    <div class="loading" id="loading">Searching...</div>
 
     <!-- Search Results -->
     <div class="search-results" id="searchResults"></div>
@@ -191,7 +201,7 @@
 
   </div>
 
-  <script src="config.js"></script>
+  <script src="../config.js"></script>
   <script>
     // Video providers
     const providers = [
@@ -399,7 +409,7 @@
       const selectedProvider = providerSelect.value;
       // First, try the user-selected provider
       if (selectedProvider) {
-        const url = getEmbed(imdb, selectedProvider, type);
+        const url = generateEmbedUrl(selectedProvider, imdb, type);
         try {
           await testProvider(url);
           return url;
@@ -485,46 +495,69 @@
     async function searchMovie() {
       const query = document.getElementById("searchInput").value.trim();
       const searchResultsDiv = document.getElementById("searchResults");
+      const loadingDiv = document.getElementById("loading");
+
+      if (!query) return alert("Please enter a movie name or IMDb ID!");
+
+      // Show loading indicator
+      loadingDiv.style.display = "block";
       searchResultsDiv.innerHTML = "";
+      searchResultsDiv.style.display = "none";
 
-      if (!query) return alert("Enter a movie name or IMDb ID!");
+      try {
+        // Check if query is an IMDb ID (e.g., tt0111161)
+        const imdbRegex = /^tt\d{7,9}$/;
+        if (imdbRegex.test(query)) {
+          await loadDetails(query);
+          searchResultsDiv.style.display = "none";
+          return;
+        }
 
-      // Check if query is an IMDb ID (e.g., tt0111161)
-      const imdbRegex = /^tt\d{7,9}$/;
-      if (imdbRegex.test(query)) {
-        loadDetails(query);
+        const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
+        const res = await fetch(searchURL);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.Response === "False") {
+          throw new Error(data.Error || "No results found");
+        }
+
+        if (data.Search && data.Search.length > 0) {
+          // Show search results list
+          searchResultsDiv.style.display = "block";
+          // Sort by year descending (newest first)
+          const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+          sortedResults.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "search-result-item";
+            div.innerHTML = `
+              <img src="${item.Poster !== "N/A" ? item.Poster : 'https://via.placeholder.com/50x75?text=No+Image'}" alt="${item.Title}" onerror="this.src='https://via.placeholder.com/50x75?text=No+Image'">
+              <div class="info">
+                <div class="title">${item.Title}</div>
+                <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
+              </div>
+            `;
+            div.onclick = () => {
+              loadDetails(item.imdbID);
+              searchResultsDiv.style.display = "none";
+            };
+            searchResultsDiv.appendChild(div);
+          });
+        } else {
+          searchResultsDiv.style.display = "none";
+          alert("No results found for your search.");
+        }
+      } catch (error) {
+        console.error("Search error:", error);
         searchResultsDiv.style.display = "none";
-        return;
-      }
-
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
-      const res = await fetch(searchURL);
-      const data = await res.json();
-
-      if (data.Search && data.Search.length > 0) {
-        // Show search results list
-        searchResultsDiv.style.display = "block";
-        // Sort by year descending (newest first)
-        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
-        sortedResults.forEach(item => {
-          const div = document.createElement("div");
-          div.className = "search-result-item";
-          div.innerHTML = `
-            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
-            <div class="info">
-              <div class="title">${item.Title}</div>
-              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
-            </div>
-          `;
-          div.onclick = () => {
-            loadDetails(item.imdbID);
-            searchResultsDiv.style.display = "none";
-          };
-          searchResultsDiv.appendChild(div);
-        });
-      } else {
-        searchResultsDiv.style.display = "none";
-        alert("No results found!");
+        alert(`Search failed: ${error.message}`);
+      } finally {
+        // Hide loading indicator
+        loadingDiv.style.display = "none";
       }
     }
 
