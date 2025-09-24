@@ -203,20 +203,6 @@
 
   <script src="../config.js"></script>
   <script>
-    // Video providers
-    const providers = [
-      "vidsrc.me",
-      "vidsrc.cc",
-      "vidsrc.vip",
-      "vidlink.pro",
-      "vidrock.net",
-      "vidfast.pro",
-      "autoembed.cc",
-      "embed.su",
-      "111movies.com",
-      "player.videasy.net",
-      "vidsrc.to"
-    ];
     const frame = document.getElementById("videoFrame");
     const movieInfo = document.getElementById("movieInfo");
     let currentImdb = null;
@@ -367,28 +353,24 @@
         'vidfast.pro': type === 'series'
           ? `https://vidfast.pro/tv/${imdbId}/${season}/${episode}?autoPlay=true&ads=0&disable_ads=1`
           : `https://vidfast.pro/movie/${imdbId}?autoPlay=true&ads=0&disable_ads=1`,
-        'autoembed.cc': type === 'series'
-          ? `https://player.autoembed.cc/embed/tv/${imdbId}/${season}/${episode}`
-          : `https://player.autoembed.cc/embed/movie/${imdbId}`,
-        'embed.su': type === 'series'
-          ? `https://embed.su/embed/tv/${imdbId}/${season}/${episode}`
-          : `https://embed.su/embed/movie/${imdbId}`,
-        '111movies.com': type === 'series'
-          ? `https://111movies.com/tv/${imdbId}/${season}/${episode}`
-          : `https://111movies.com/movie/${imdbId}`,
+        'vidsrc.vip': type === 'series'
+          ? `https://vidsrc.vip/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://vidsrc.vip/embed/movie/${imdbId}`,
         'vidlink.pro': type === 'series'
           ? `https://vidlink.pro/tv/${imdbId}/${season}/${episode}`
-          : type === 'anime'
-          ? `https://vidlink.pro/anime/${imdbId}/${episode}/sub?fallback=true`
           : `https://vidlink.pro/movie/${imdbId}`,
-        'player.videasy.net': type === 'series'
-          ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}`
-          : type === 'anime'
-          ? `https://player.videasy.net/anime/${imdbId}/${episode}?dub=false`
-          : `https://player.videasy.net/movie/${imdbId}`,
-        'vidsrc.to': type === 'series'
-          ? `https://vidsrc.to/embed/tv/${imdbId}/${season}/${episode}`
-          : `https://vidsrc.to/embed/movie/${imdbId}`
+        'kisskh.co': type === 'series'
+          ? `https://kisskh.co/tv/${imdbId}/${season}/${episode}`
+          : `https://kisskh.co/movie/${imdbId}`,
+        'filmxy.online': type === 'series'
+          ? `https://filmxy.online/tv/${imdbId}/${season}/${episode}`
+          : `https://filmxy.online/movie/${imdbId}`,
+        'smashystream': type === 'series'
+          ? `https://player.smashy.stream/tv/${imdbId}?s=${season}&e=${episode}`
+          : `https://player.smashy.stream/movie/${imdbId}`,
+        'fmovies.gd': type === 'series'
+          ? `https://fmovies.gd/tv/${imdbId}/${season}/${episode}`
+          : `https://fmovies.gd/movie/${imdbId}`
       };
       return baseUrls[provider] || null;
     }
