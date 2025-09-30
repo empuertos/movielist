@@ -69,15 +69,6 @@
     .search-box input:focus {
       border-color: #e50914;
     }
-    .search-box input::placeholder {
-      color: #888;
-    }
-    .loading {
-      display: none;
-      color: #e50914;
-      font-size: 14px;
-      margin-top: 10px;
-    }
     .search-box select {
       padding: 12px;
       border-radius: 25px;
@@ -121,6 +112,9 @@
       }
       .movie-info img {
         max-width: 150px;
+      }
+      .movie-list {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
     /* Episode selector */
@@ -169,13 +163,42 @@
       font-size: 12px;
       color: #ccc;
     }
+    /* Movie List */
+    .movie-list {
+      width: 90%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .movie-item {
+      cursor: pointer;
+      text-align: center;
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    .movie-item:hover {
+      background: #333;
+    }
+    .movie-item img {
+      width: 100%;
+      max-width: 150px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .movie-item p {
+      font-size: 14px;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
 
   <header>🎬 Movies</header>
 
-  <div class="container">
     <!-- Search Bar -->
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="Search movies or enter IMDb ID...">
@@ -183,10 +206,15 @@
       </select>
       <button onclick="searchMovie()">🔍 Search</button>
     </div>
-    <div class="loading" id="loading">Searching...</div>
 
     <!-- Search Results -->
     <div class="search-results" id="searchResults"></div>
+
+  <div class="movie-list" id="movieList">
+    <!-- Movies will be loaded here -->
+  </div>
+
+  <div class="container">
 
     <!-- Video Player -->
     <div class="video-wrapper">
@@ -201,8 +229,20 @@
 
   </div>
 
-  <script src="../config.js"></script>
   <script>
+    // Video providers
+    const providers = [
+      "autoembed.cc",
+      "embed.su",
+      "111movies.com",
+      "vidlink.pro",
+      "player.videasy.net",
+      "vidsrc.to",
+      "vidsrc.cc",
+      "vidrock.net",
+      "vidsrc.me",
+      "vidfast.pro"
+    ];
     const frame = document.getElementById("videoFrame");
     const movieInfo = document.getElementById("movieInfo");
     let currentImdb = null;
@@ -216,7 +256,7 @@
     async function loadDetails(imdbid) {
       currentImdb = imdbid;
 
-      const detailsURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}`;
+      const detailsURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}`;
       const detailsRes = await fetch(detailsURL);
       const details = await detailsRes.json();
 
@@ -259,7 +299,7 @@
       episodesDiv.innerHTML = "<p>Loading episodes...</p>";
 
       // Fetch season and episode info from OMDB
-      const seasonURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}&plot=full`;
+      const seasonURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}&plot=full`;
       const seasonRes = await fetch(seasonURL);
       const seasonData = await seasonRes.json();
 
@@ -287,7 +327,7 @@
       async function loadEpisodes(season) {
         episodeSelect.innerHTML = "";
         // Fetch episodes for season
-        const episodesURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbid}&Season=${season}`;
+        const episodesURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}&Season=${season}`;
         const episodesRes = await fetch(episodesURL);
         const episodesData = await episodesRes.json();
 
@@ -341,6 +381,71 @@
       providerSelect.value = "vidrock.net";
     }
 
+    // Load movie list
+    async function loadMovieList() {
+      const movieListDiv = document.getElementById('movieList');
+      movieListDiv.innerHTML = '<p>Loading movies...</p>';
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const storedList = localStorage.getItem('movieList');
+      const storedTimestamp = localStorage.getItem('movieListTimestamp');
+
+      let list = [];
+      if (storedList && storedTimestamp && (now - parseInt(storedTimestamp)) < oneDay) {
+        // Use stored list immediately
+        list = JSON.parse(storedList);
+        renderMovieList(list);
+
+        // Fetch new list in background to update cache
+        fetchNewMovieList();
+      } else {
+        // Fetch new list and render
+        list = await fetchNewMovieList();
+      }
+
+      function renderMovieList(list) {
+        const html = list.map(movie => `
+          <div class="movie-item" onclick="playMovie('${movie.imdbID}', '${movie.Type}')">
+            <img src="${movie.Poster !== 'N/A' ? movie.Poster : ''}" alt="${movie.Title}">
+            <p>${movie.Title} (${movie.Year})</p>
+          </div>
+        `).join('');
+        movieListDiv.innerHTML = html;
+      }
+
+      async function fetchNewMovieList() {
+        const items = [];
+        const types = ['movie', 'series'];
+        for (const type of types) {
+          for (let page = 1; page <= 5; page++) { // 5 pages per type to get ~50 each, total 100
+            const url = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${type}&y=2025&type=${type}&page=${page}`;
+            try {
+              const res = await fetch(url);
+              const data = await res.json();
+              if (data.Search) {
+                items.push(...data.Search);
+              }
+            } catch (e) {
+              console.error('Error fetching page', page, e);
+            }
+          }
+        }
+        const newList = items.slice(0, 100);
+        localStorage.setItem('movieList', JSON.stringify(newList));
+        localStorage.setItem('movieListTimestamp', Date.now().toString());
+        renderMovieList(newList);
+        return newList;
+      }
+    }
+
+    // Play movie directly from list
+    function playMovie(imdbID, type) {
+      currentImdb = imdbID;
+      currentType = type.toLowerCase();
+      playContent(imdbID);
+    }
+
+    // Generate embed URL for a provider
     function generateEmbedUrl(provider, imdbId, type, season = 1, episode = 1) {
       const baseUrls = {
         'vidsrc.cc': type === 'series'
@@ -353,26 +458,30 @@
         'vidfast.pro': type === 'series'
           ? `https://vidfast.pro/tv/${imdbId}/${season}/${episode}?autoPlay=true&ads=0&disable_ads=1`
           : `https://vidfast.pro/movie/${imdbId}?autoPlay=true&ads=0&disable_ads=1`,
-        'vidsrc.vip': type === 'series'
-          ? `https://vidsrc.vip/embed/tv/${imdbId}/${season}/${episode}`
-          : `https://vidsrc.vip/embed/movie/${imdbId}`,
+        'autoembed.cc': type === 'series'
+          ? `https://player.autoembed.cc/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://player.autoembed.cc/embed/movie/${imdbId}`,
+        'embed.su': type === 'series'
+          ? `https://embed.su/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://embed.su/embed/movie/${imdbId}`,
+        '111movies.com': type === 'series'
+          ? `https://111movies.com/tv/${imdbId}/${season}/${episode}`
+          : `https://111movies.com/movie/${imdbId}`,
         'vidlink.pro': type === 'series'
           ? `https://vidlink.pro/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://vidlink.pro/anime/${imdbId}/${episode}/sub?fallback=true`
           : `https://vidlink.pro/movie/${imdbId}`,
-        'kisskh.co': type === 'series'
-          ? `https://kisskh.co/tv/${imdbId}/${season}/${episode}`
-          : `https://kisskh.co/movie/${imdbId}`,
-        'filmxy.online': type === 'series'
-          ? `https://filmxy.online/tv/${imdbId}/${season}/${episode}`
-          : `https://filmxy.online/movie/${imdbId}`,
-        'smashystream': type === 'series'
-          ? `https://player.smashy.stream/tv/${imdbId}?s=${season}&e=${episode}`
-          : `https://player.smashy.stream/movie/${imdbId}`,
-        'fmovies.gd': type === 'series'
-          ? `https://fmovies.gd/tv/${imdbId}/${season}/${episode}`
-          : `https://fmovies.gd/movie/${imdbId}`
+        'player.videasy.net': type === 'series'
+          ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://player.videasy.net/anime/${imdbId}/${episode}?dub=false`
+          : `https://player.videasy.net/movie/${imdbId}`,
+        'vidsrc.to': type === 'series'
+          ? `https://vidsrc.to/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://vidsrc.to/embed/movie/${imdbId}`
       };
-      return baseUrls[provider] || null;
+      return baseUrls[provider] || '';
     }
 
     function testProvider(url) {
@@ -439,7 +548,7 @@
         return;
       }
 
-      const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}`;
+      const searchURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${encodeURIComponent(query)}`;
       const res = await fetch(searchURL);
       const data = await res.json();
 
@@ -477,69 +586,46 @@
     async function searchMovie() {
       const query = document.getElementById("searchInput").value.trim();
       const searchResultsDiv = document.getElementById("searchResults");
-      const loadingDiv = document.getElementById("loading");
-
-      if (!query) return alert("Please enter a movie name or IMDb ID!");
-
-      // Show loading indicator
-      loadingDiv.style.display = "block";
       searchResultsDiv.innerHTML = "";
-      searchResultsDiv.style.display = "none";
 
-      try {
-        // Check if query is an IMDb ID (e.g., tt0111161)
-        const imdbRegex = /^tt\d{7,9}$/;
-        if (imdbRegex.test(query)) {
-          await loadDetails(query);
-          searchResultsDiv.style.display = "none";
-          return;
-        }
+      if (!query) return alert("Enter a movie name or IMDb ID!");
 
-        const searchURL = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&s=${encodeURIComponent(query)}&type=movie`;
-        const res = await fetch(searchURL);
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        if (data.Response === "False") {
-          throw new Error(data.Error || "No results found");
-        }
-
-        if (data.Search && data.Search.length > 0) {
-          // Show search results list
-          searchResultsDiv.style.display = "block";
-          // Sort by year descending (newest first)
-          const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
-          sortedResults.forEach(item => {
-            const div = document.createElement("div");
-            div.className = "search-result-item";
-            div.innerHTML = `
-              <img src="${item.Poster !== "N/A" ? item.Poster : 'https://via.placeholder.com/50x75?text=No+Image'}" alt="${item.Title}" onerror="this.src='https://via.placeholder.com/50x75?text=No+Image'">
-              <div class="info">
-                <div class="title">${item.Title}</div>
-                <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
-              </div>
-            `;
-            div.onclick = () => {
-              loadDetails(item.imdbID);
-              searchResultsDiv.style.display = "none";
-            };
-            searchResultsDiv.appendChild(div);
-          });
-        } else {
-          searchResultsDiv.style.display = "none";
-          alert("No results found for your search.");
-        }
-      } catch (error) {
-        console.error("Search error:", error);
+      // Check if query is an IMDb ID (e.g., tt0111161)
+      const imdbRegex = /^tt\d{7,9}$/;
+      if (imdbRegex.test(query)) {
+        loadDetails(query);
         searchResultsDiv.style.display = "none";
-        alert(`Search failed: ${error.message}`);
-      } finally {
-        // Hide loading indicator
-        loadingDiv.style.display = "none";
+        return;
+      }
+
+      const searchURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${encodeURIComponent(query)}`;
+      const res = await fetch(searchURL);
+      const data = await res.json();
+
+      if (data.Search && data.Search.length > 0) {
+        // Show search results list
+        searchResultsDiv.style.display = "block";
+        // Sort by year descending (newest first)
+        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        sortedResults.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "search-result-item";
+          div.innerHTML = `
+            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
+            <div class="info">
+              <div class="title">${item.Title}</div>
+              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
+            </div>
+          `;
+          div.onclick = () => {
+            loadDetails(item.imdbID);
+            searchResultsDiv.style.display = "none";
+          };
+          searchResultsDiv.appendChild(div);
+        });
+      } else {
+        searchResultsDiv.style.display = "none";
+        alert("No results found!");
       }
     }
 
@@ -563,6 +649,9 @@
         searchResultsDiv.style.display = "none";
       }
     });
+
+    // Load movie list on page load
+    loadMovieList();
 
 
   </script>
