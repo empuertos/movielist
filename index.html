@@ -405,7 +405,7 @@
 
       function renderMovieList(list) {
         const html = list.map(movie => `
-          <div class="movie-item" onclick="playMovie('${movie.imdbID}', '${movie.Type}')">
+          <div class="movie-item" onclick="loadDetails('${movie.imdbID}')">
             <img src="${movie.Poster !== 'N/A' ? movie.Poster : ''}" alt="${movie.Title}">
             <p>${movie.Title} (${movie.Year})</p>
           </div>
