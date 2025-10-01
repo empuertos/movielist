@@ -222,7 +222,7 @@
     </div>
 
     <!-- Movie Info -->
-    <div class="movie-info" id="movieInfo"></div>
+  <div class="movie-info" id="movieInfo" style="display:none;"></div>
 
     <!-- Episode selector -->
     <div class="episodes" id="episodes"></div>
@@ -254,13 +254,16 @@
 
     // Load details + play via IMDb ID
     async function loadDetails(imdbid) {
+      console.log("loadDetails called with imdbid:", imdbid);
       currentImdb = imdbid;
 
       const detailsURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}`;
       const detailsRes = await fetch(detailsURL);
       const details = await detailsRes.json();
+      console.log("Details fetched:", details);
 
       if (details.Response === "True") {
+        movieInfo.style.display = "block";
         movieInfo.innerHTML = `
           <h2>${details.Title} (${details.Year})</h2>
           <p><strong>Genre:</strong> ${details.Genre}</p>
@@ -269,6 +272,7 @@
           <p><strong>Actors:</strong> ${details.Actors}</p>
           <img src="${details.Poster !== "N/A" ? details.Poster : ''}" alt="Poster">
         `;
+        console.log("Movie info updated in DOM");
 
         currentType = details.Type;
         // Check if type is movie or series
