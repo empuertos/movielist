@@ -1,1 +1,665 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movies</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #141414;
+      color: #fff;
+    }
+    header {
+      background: #000;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      color: #e50914;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .video-wrapper {
+      width: 90%;
+      max-width: 1000px;
+      margin-bottom: 20px;
+    }
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 8px;
+    }
+    .movie-info {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .movie-info img {
+      margin-top: 10px;
+      border-radius: 8px;
+      max-width: 200px;
+    }
+
+    /* Search bar */
+    .search-box {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      flex-wrap: wrap;
+    }
+    .search-box input {
+      padding: 12px 15px;
+      border-radius: 25px;
+      border: 2px solid #333;
+      background: #222;
+      color: #fff;
+      font-size: 16px;
+      width: 300px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #e50914;
+    }
+    .search-box select {
+      padding: 12px;
+      border-radius: 25px;
+      border: 2px solid #333;
+      background: #222;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      cursor: pointer;
+    }
+    .search-box button {
+      padding: 12px 20px;
+      background: #e50914;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .search-box button:hover {
+      background: #b20710;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .search-box input {
+        width: 100%;
+        max-width: 300px;
+      }
+      .search-box select {
+        width: 100px;
+      }
+      .search-box button {
+        width: 100%;
+        max-width: 150px;
+      }
+      .video-wrapper iframe {
+        height: 300px;
+      }
+      .movie-info img {
+        max-width: 150px;
+      }
+      .movie-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    /* Episode selector */
+    .episodes {
+      margin: 20px;
+      text-align: center;
+    }
+    .episodes select {
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+    /* Search results */
+    .search-results {
+      width: 90%;
+      max-width: 1000px;
+      background: #222;
+      border-radius: 5px;
+      margin-top: 10px;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .search-result-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .search-result-item:hover {
+      background: #333;
+    }
+    .search-result-item img {
+      width: 50px;
+      border-radius: 5px;
+    }
+    .search-result-item .info {
+      flex: 1;
+    }
+    .search-result-item .title {
+      font-weight: bold;
+    }
+    .search-result-item .year {
+      font-size: 12px;
+      color: #ccc;
+    }
+    /* Movie List */
+    .movie-list {
+      width: 90%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .movie-item {
+      cursor: pointer;
+      text-align: center;
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    .movie-item:hover {
+      background: #333;
+    }
+    .movie-item img {
+      width: 100%;
+      max-width: 150px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .movie-item p {
+      font-size: 14px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🎬 Movies</header>
+
+    <!-- Search Bar -->
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search movies or enter IMDb ID...">
+      <select id="providerSelect">
+      </select>
+      <button onclick="searchMovie()">🔍 Search</button>
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results" id="searchResults"></div>
+
+  <div class="movie-list" id="movieList">
+    <!-- Movies will be loaded here -->
+  </div>
+
+  <div class="container">
+
+    <!-- Video Player -->
+    <div class="video-wrapper">
+      <iframe id="videoFrame" src="" allowfullscreen></iframe>
+    </div>
+
+    <!-- Movie Info -->
+  <div class="movie-info" id="movieInfo" style="display:none;"></div>
+
+    <!-- Episode selector -->
+    <div class="episodes" id="episodes"></div>
+
+  </div>
+
+  <script>
+    // Video providers
+    const providers = [
+      "autoembed.cc",
+      "embed.su",
+      "111movies.com",
+      "vidlink.pro",
+      "player.videasy.net",
+      "vidsrc.to",
+      "vidsrc.cc",
+      "vidrock.net",
+      "vidsrc.me",
+      "vidfast.pro"
+    ];
+    const frame = document.getElementById("videoFrame");
+    const movieInfo = document.getElementById("movieInfo");
+    let currentImdb = null;
+    let currentType = "movie";
+    let currentSeason = 1;
+    let currentEpisode = 1;
+    let episodes = [];
+    let autoNextTimer = null;
+
+    // Load details + play via IMDb ID
+    async function loadDetails(imdbid) {
+      console.log("loadDetails called with imdbid:", imdbid);
+      currentImdb = imdbid;
+
+      const detailsURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}`;
+      const detailsRes = await fetch(detailsURL);
+      const details = await detailsRes.json();
+      console.log("Details fetched:", details);
+
+      if (details.Response === "True") {
+        movieInfo.style.display = "block";
+        movieInfo.innerHTML = `
+          <h2>${details.Title} (${details.Year})</h2>
+          <p><strong>Genre:</strong> ${details.Genre}</p>
+          <p><strong>Plot:</strong> ${details.Plot}</p>
+          <p><strong>Director:</strong> ${details.Director}</p>
+          <p><strong>Actors:</strong> ${details.Actors}</p>
+          <img src="${details.Poster !== "N/A" ? details.Poster : ''}" alt="Poster">
+        `;
+        console.log("Movie info updated in DOM");
+
+        currentType = details.Type;
+        // Check if type is movie or series
+        if (details.Type === "movie" || details.Type === "series") {
+          if (details.Type === "series") {
+            // Show episode selector for series
+            showEpisodeSelector(imdbid);
+          } else {
+            // Hide episode selector for movies
+            document.getElementById("episodes").innerHTML = "";
+          }
+          playContent(imdbid);
+        } else {
+          frame.src = "";
+          alert("Content type not supported!");
+          return;
+        }
+      } else {
+        frame.src = "";
+        alert("Movie not found!");
+        return;
+      }
+    }
+
+    // Show episode selector for series
+    async function showEpisodeSelector(imdbid) {
+      const episodesDiv = document.getElementById("episodes");
+      episodesDiv.innerHTML = "<p>Loading episodes...</p>";
+
+      // Fetch season and episode info from OMDB
+      const seasonURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}&plot=full`;
+      const seasonRes = await fetch(seasonURL);
+      const seasonData = await seasonRes.json();
+
+      // For simplicity, assume max 10 seasons if not provided
+      let maxSeasons = 10;
+      if (seasonData.totalSeasons) {
+        maxSeasons = parseInt(seasonData.totalSeasons);
+      }
+
+      // Create season selector
+      let seasonSelect = document.createElement("select");
+      seasonSelect.id = "seasonSelect";
+      for (let i = 1; i <= maxSeasons; i++) {
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = "Season " + i;
+        seasonSelect.appendChild(option);
+      }
+
+      // Create episode selector
+      let episodeSelect = document.createElement("select");
+      episodeSelect.id = "episodeSelect";
+
+      // Load episodes for selected season
+      async function loadEpisodes(season) {
+        episodeSelect.innerHTML = "";
+        // Fetch episodes for season
+        const episodesURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?i=${imdbid}&Season=${season}`;
+        const episodesRes = await fetch(episodesURL);
+        const episodesData = await episodesRes.json();
+
+        if (episodesData.Episodes) {
+          episodesData.Episodes.forEach(ep => {
+            let option = document.createElement("option");
+            option.value = ep.Episode;
+            option.textContent = `Episode ${ep.Episode}: ${ep.Title}`;
+            episodeSelect.appendChild(option);
+          });
+        } else {
+          let option = document.createElement("option");
+          option.value = 1;
+          option.textContent = "Episode 1";
+          episodeSelect.appendChild(option);
+        }
+      }
+
+      // Load initial episodes for season 1
+      await loadEpisodes(1);
+
+      // Update episodes when season changes
+      seasonSelect.addEventListener("change", async (e) => {
+        await loadEpisodes(e.target.value);
+        currentSeason = parseInt(e.target.value);
+        currentEpisode = 1;
+        playContent(currentImdb);
+      });
+
+      // Update video when episode changes
+      episodeSelect.addEventListener("change", (e) => {
+        currentEpisode = parseInt(e.target.value);
+        playContent(currentImdb);
+      });
+
+      episodesDiv.innerHTML = "";
+      episodesDiv.appendChild(seasonSelect);
+      episodesDiv.appendChild(episodeSelect);
+    }
+
+    // Play content
+    const providerSelect = document.getElementById("providerSelect");
+    providers.forEach(p => {
+      let opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      providerSelect.appendChild(opt);
+    });
+    // Prefer vidrock.net as default
+    if (providers.includes("vidrock.net")) {
+      providerSelect.value = "vidrock.net";
+    }
+
+    // Load movie list
+    async function loadMovieList() {
+      const movieListDiv = document.getElementById('movieList');
+      movieListDiv.innerHTML = '<p>Loading movies...</p>';
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const storedList = localStorage.getItem('movieList');
+      const storedTimestamp = localStorage.getItem('movieListTimestamp');
+
+      let list = [];
+      if (storedList && storedTimestamp && (now - parseInt(storedTimestamp)) < oneDay) {
+        // Use stored list immediately
+        list = JSON.parse(storedList);
+        renderMovieList(list);
+
+        // Fetch new list in background to update cache
+        fetchNewMovieList();
+      } else {
+        // Fetch new list and render
+        list = await fetchNewMovieList();
+      }
+
+      function renderMovieList(list) {
+        const html = list.map(movie => `
+          <div class="movie-item" onclick="loadDetails('${movie.imdbID}')">
+            <img src="${movie.Poster !== 'N/A' ? movie.Poster : ''}" alt="${movie.Title}">
+            <p>${movie.Title} (${movie.Year})</p>
+          </div>
+        `).join('');
+        movieListDiv.innerHTML = html;
+      }
+
+      async function fetchNewMovieList() {
+        const items = [];
+        const types = ['movie', 'series'];
+        for (const type of types) {
+          for (let page = 1; page <= 5; page++) { // 5 pages per type to get ~50 each, total 100
+            const url = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${type}&y=2025&type=${type}&page=${page}`;
+            try {
+              const res = await fetch(url);
+              const data = await res.json();
+              if (data.Search) {
+                items.push(...data.Search);
+              }
+            } catch (e) {
+              console.error('Error fetching page', page, e);
+            }
+          }
+        }
+        const newList = items.slice(0, 100);
+        localStorage.setItem('movieList', JSON.stringify(newList));
+        localStorage.setItem('movieListTimestamp', Date.now().toString());
+        renderMovieList(newList);
+        return newList;
+      }
+    }
+
+    // Play movie directly from list
+    function playMovie(imdbID, type) {
+      currentImdb = imdbID;
+      currentType = type.toLowerCase();
+      playContent(imdbID);
+    }
+
+    // Generate embed URL for a provider
+    function generateEmbedUrl(provider, imdbId, type, season = 1, episode = 1) {
+      const baseUrls = {
+        'vidsrc.cc': type === 'series'
+          ? `https://vidsrc.cc/v2/embed/tv/${imdbId}/${season}?ads=0&disable_ads=1`
+          : `https://vidsrc.cc/v2/embed/movie/${imdbId}?ads=0&disable_ads=1`,
+        'vidrock.net': type === 'series'
+          ? `https://vidrock.net/tv/${imdbId}/${season}/${episode}?ads=0&disable_ads=1`
+          : `https://vidrock.net/movie/${imdbId}?ads=0&disable_ads=1`,
+        'vidsrc.me': `https://vidsrc.me/embed/${type}/${imdbId}?ads=0&disable_ads=1`,
+        'vidfast.pro': type === 'series'
+          ? `https://vidfast.pro/tv/${imdbId}/${season}/${episode}?autoPlay=true&ads=0&disable_ads=1`
+          : `https://vidfast.pro/movie/${imdbId}?autoPlay=true&ads=0&disable_ads=1`,
+        'autoembed.cc': type === 'series'
+          ? `https://player.autoembed.cc/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://player.autoembed.cc/embed/movie/${imdbId}`,
+        'embed.su': type === 'series'
+          ? `https://embed.su/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://embed.su/embed/movie/${imdbId}`,
+        '111movies.com': type === 'series'
+          ? `https://111movies.com/tv/${imdbId}/${season}/${episode}`
+          : `https://111movies.com/movie/${imdbId}`,
+        'vidlink.pro': type === 'series'
+          ? `https://vidlink.pro/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://vidlink.pro/anime/${imdbId}/${episode}/sub?fallback=true`
+          : `https://vidlink.pro/movie/${imdbId}`,
+        'player.videasy.net': type === 'series'
+          ? `https://player.videasy.net/tv/${imdbId}/${season}/${episode}`
+          : type === 'anime'
+          ? `https://player.videasy.net/anime/${imdbId}/${episode}?dub=false`
+          : `https://player.videasy.net/movie/${imdbId}`,
+        'vidsrc.to': type === 'series'
+          ? `https://vidsrc.to/embed/tv/${imdbId}/${season}/${episode}`
+          : `https://vidsrc.to/embed/movie/${imdbId}`
+      };
+      return baseUrls[provider] || '';
+    }
+
+    function testProvider(url) {
+      return new Promise((resolve, reject) => {
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.style.display = "none";
+        iframe.onload = () => resolve(true);
+        iframe.onerror = () => reject(false);
+        document.body.appendChild(iframe);
+        setTimeout(() => reject(false), 10000); // 10s timeout
+      });
+    }
+
+    async function autoSelectProvider(imdb, type = "movie") {
+      const selectedProvider = providerSelect.value;
+      // First, try the user-selected provider
+      if (selectedProvider) {
+        const url = generateEmbedUrl(selectedProvider, imdb, type);
+        try {
+          await testProvider(url);
+          return url;
+        } catch (e) {
+          console.log(`Selected provider ${selectedProvider} failed, trying others...`);
+        }
+      }
+
+      // If selected fails or none selected, try others
+      for (let p of providers) {
+        if (p === selectedProvider) continue; // Skip if already tried
+        const url = generateEmbedUrl(p, imdb, type);
+        try {
+          await testProvider(url);
+          providerSelect.value = p;
+          return url;
+        } catch (e) {
+          console.log(`Provider failed: ${p}`);
+        }
+      }
+      return generateEmbedUrl("vidsrc.me", imdb, type);
+    }
+
+    async function playContent(imdb) {
+      let url = await autoSelectProvider(imdb, currentType);
+      frame.src = url;
+    }
+
+    // Debounce function
+    function debounce(func, delay) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    // Fetch suggestions
+    async function fetchSuggestions(query) {
+      const searchResultsDiv = document.getElementById("searchResults");
+      searchResultsDiv.innerHTML = "";
+
+      if (!query.trim()) {
+        searchResultsDiv.style.display = "none";
+        return;
+      }
+
+      const searchURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${encodeURIComponent(query)}`;
+      const res = await fetch(searchURL);
+      const data = await res.json();
+
+      if (data.Search && data.Search.length > 0) {
+        searchResultsDiv.style.display = "block";
+        // Sort by year descending (newest first)
+        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        const limitedResults = sortedResults.slice(0, 8); // Limit to 8 suggestions
+        limitedResults.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "search-result-item";
+          div.innerHTML = `
+            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
+            <div class="info">
+              <div class="title">${item.Title}</div>
+              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
+            </div>
+          `;
+          div.onclick = () => {
+            loadDetails(item.imdbID);
+            searchResultsDiv.style.display = "none";
+            document.getElementById("searchInput").value = item.Title;
+            movieInfo.style.display = "block";
+          };
+          searchResultsDiv.appendChild(div);
+        });
+      } else {
+        searchResultsDiv.style.display = "none";
+      }
+    }
+
+    // Debounced suggestions
+    const debouncedFetchSuggestions = debounce(fetchSuggestions, 300);
+
+    // Search movies
+    async function searchMovie() {
+      const query = document.getElementById("searchInput").value.trim();
+      const searchResultsDiv = document.getElementById("searchResults");
+      searchResultsDiv.innerHTML = "";
+
+      if (!query) return alert("Enter a movie name or IMDb ID!");
+
+      // Check if query is an IMDb ID (e.g., tt0111161)
+      const imdbRegex = /^tt\d{7,9}$/;
+      if (imdbRegex.test(query)) {
+        loadDetails(query);
+        searchResultsDiv.style.display = "none";
+        return;
+      }
+
+      const searchURL = `https://omdb.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?s=${encodeURIComponent(query)}`;
+      const res = await fetch(searchURL);
+      const data = await res.json();
+
+      if (data.Search && data.Search.length > 0) {
+        // Show search results list
+        searchResultsDiv.style.display = "block";
+        // Sort by year descending (newest first)
+        const sortedResults = data.Search.sort((a, b) => parseInt(b.Year) - parseInt(a.Year));
+        sortedResults.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "search-result-item";
+          div.innerHTML = `
+            <img src="${item.Poster !== "N/A" ? item.Poster : ''}" alt="${item.Title}">
+            <div class="info">
+              <div class="title">${item.Title}</div>
+              <div class="year">${item.Year} - ${item.Type === "movie" ? "Movie" : "Series"}</div>
+            </div>
+          `;
+          div.onclick = () => {
+            loadDetails(item.imdbID);
+            searchResultsDiv.style.display = "none";
+          };
+          searchResultsDiv.appendChild(div);
+        });
+      } else {
+        searchResultsDiv.style.display = "none";
+        alert("No results found!");
+      }
+    }
+
+    // Event listeners
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      debouncedFetchSuggestions(e.target.value);
+    });
+
+    // Auto-update video when provider changes
+    document.getElementById("providerSelect").addEventListener("change", () => {
+      if (currentImdb) {
+        playContent(currentImdb);
+      }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener("click", (e) => {
+      const searchResultsDiv = document.getElementById("searchResults");
+      const searchBox = document.querySelector(".search-box");
+      if (!searchBox.contains(e.target)) {
+        searchResultsDiv.style.display = "none";
+      }
+    });
+
+    // Load movie list on page load
+    loadMovieList();
+
+
+  </script>
+</body>
+</html>
