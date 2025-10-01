@@ -261,10 +261,18 @@
       const details = await detailsRes.json();
 
       if (details.Response === "True") {
+        movieInfo.innerHTML = `
+          <h2>${details.Title} (${details.Year})</h2>
+          <p><strong>Genre:</strong> ${details.Genre}</p>
+          <p><strong>Plot:</strong> ${details.Plot}</p>
+          <p><strong>Director:</strong> ${details.Director}</p>
+          <p><strong>Actors:</strong> ${details.Actors}</p>
+          <img src="${details.Poster !== "N/A" ? details.Poster : ''}" alt="Poster">
+        `;
+
         currentType = details.Type;
         // Check if type is movie or series
         if (details.Type === "movie" || details.Type === "series") {
-          playContent(imdbid);
           if (details.Type === "series") {
             // Show episode selector for series
             showEpisodeSelector(imdbid);
@@ -272,6 +280,7 @@
             // Hide episode selector for movies
             document.getElementById("episodes").innerHTML = "";
           }
+          playContent(imdbid);
         } else {
           frame.src = "";
           alert("Content type not supported!");
@@ -282,15 +291,6 @@
         alert("Movie not found!");
         return;
       }
-
-      movieInfo.innerHTML = `
-        <h2>${details.Title} (${details.Year})</h2>
-        <p><strong>Genre:</strong> ${details.Genre}</p>
-        <p><strong>Plot:</strong> ${details.Plot}</p>
-        <p><strong>Director:</strong> ${details.Director}</p>
-        <p><strong>Actors:</strong> ${details.Actors}</p>
-        <img src="${details.Poster !== "N/A" ? details.Poster : ''}" alt="Poster">
-      `;
     }
 
     // Show episode selector for series
