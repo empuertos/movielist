@@ -829,7 +829,7 @@
     <header>
         <nav class="navbar">
             <div class="logo">
-                <i class="fas fa-play-circle"></i>
+                <img src="https://via.placeholder.com/40x40/00FF9D/000?text=SF" alt="StreamFlix Logo" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
                 <h1>StreamFlix</h1>
             </div>
             <div class="search-container">
@@ -1033,6 +1033,14 @@
         // Search suggestions
         function handleSearchInput() {
             const query = searchInput.value.trim();
+            if (query.length === 0) {
+                currentQuery = '';
+                currentPage = 1;
+                contentGrid.innerHTML = '';
+                fetchContent();
+                hideSuggestions();
+                return;
+            }
             if (query.length < 3) {
                 hideSuggestions();
                 return;
