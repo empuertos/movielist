@@ -64,6 +64,7 @@
         .search-container {
             display: flex;
             gap: 10px;
+            position: relative;
         }
 
         .search-box {
@@ -797,6 +798,30 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
         }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--dark);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-suggestion-item:hover {
+            background: var(--secondary);
+        }
     </style>
 </head>
 <body>
@@ -810,6 +835,7 @@
             <div class="search-container">
                 <input type="text" class="search-box" id="searchInput" placeholder="Search movies and TV shows...">
                 <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i> Search</button>
+                <div id="searchSuggestions" class="search-suggestions"></div>
             </div>
         </nav>
     </header>
@@ -1004,6 +1030,58 @@
         const providerSelect = document.getElementById('providerSelect');
         const videoLink = document.getElementById('videoLink');
 
+        // Search suggestions
+        function handleSearchInput() {
+            const query = searchInput.value.trim();
+            if (query.length < 3) {
+                hideSuggestions();
+                return;
+            }
+            fetchSuggestions(query);
+        }
+
+        async function fetchSuggestions(query) {
+            try {
+                const endpoint = currentMode === 'movie'
+                    ? `${API_URL}/search/movie?query=${query}&page=1`
+                    : `${API_URL}/search/tv?query=${query}&page=1`;
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                displaySuggestions(data.results.slice(0, 10));
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+            }
+        }
+
+        function displaySuggestions(items) {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            suggestionsDiv.innerHTML = '';
+            if (items.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'search-suggestion-item';
+                const title = currentMode === 'movie' ? item.title : item.name;
+                const year = currentMode === 'movie'
+                    ? (item.release_date ? item.release_date.substring(0, 4) : '')
+                    : (item.first_air_date ? item.first_air_date.substring(0, 4) : '');
+                div.textContent = `${title} (${year})`;
+                div.addEventListener('click', () => {
+                    searchInput.value = title;
+                    hideSuggestions();
+                    handleSearch();
+                });
+                suggestionsDiv.appendChild(div);
+            });
+            suggestionsDiv.style.display = 'block';
+        }
+
+        function hideSuggestions() {
+            document.getElementById('searchSuggestions').style.display = 'none';
+        }
+
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
             fetchContent();
@@ -1016,6 +1094,8 @@
             searchInput.addEventListener('keyup', (e) => {
                 if (e.key === 'Enter') handleSearch();
             });
+            searchInput.addEventListener('input', handleSearchInput);
+            searchInput.addEventListener('blur', () => setTimeout(hideSuggestions, 200));
             
             movieModeBtn.addEventListener('click', () => switchMode('movie'));
             closeProviderModal.addEventListener('click', () => providerModal.style.display = 'none');
@@ -1196,6 +1276,7 @@
             currentQuery = searchInput.value.trim();
             currentPage = 1;
             contentGrid.innerHTML = '';
+            hideSuggestions();
             fetchContent();
         }
 
