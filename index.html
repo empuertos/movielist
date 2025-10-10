@@ -482,6 +482,36 @@
             justify-content: center;
             margin-top: 2rem;
         }
+        
+        /* Inline Streaming Section */
+        .streaming-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .streaming-section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .streaming-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .streaming-controls .selector-select {
+            flex-grow: 1;
+        }
+        .streaming-controls .btn-refresh {
+            background-color: var(--primary);
+            color: var(--secondary);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
 
         .watch-btn:hover {
             background-color: #ff1a4f;
@@ -1336,6 +1366,22 @@
                         <h3>Overview</h3>
                         <p id="modalOverview">No overview available.</p>
                         <button class="watch-btn" id="watchBtn"><i class="fas fa-play" aria-hidden="true"></i> Watch Now Full Movie</button>
+                        <!-- Inline Streaming Section -->
+                        <div class="streaming-section" id="streamingSection" style="display: none;">
+                            <h3>Watch Content</h3>
+                            <div class="streaming-controls">
+                                <select class="selector-select" id="inlineProviderSelect">
+                                    <!-- Providers will be populated here -->
+                                </select>
+                                <button class="btn-refresh" id="refreshStreamBtn">Refresh</button>
+                            </div>
+                            <div class="video-player" style="height: 500px; background: #000; border-radius: 10px; overflow: hidden; position: relative;">
+                                <iframe class="stream-iframe" id="inlineStreamIframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"
+                                    referrerpolicy="strict-origin-when-cross-origin" style="width: 100%; height: 100%; border: none;">
+                                </iframe>
+                                <div id="inlineVideoTitle" style="position: absolute; bottom: 20px; width: 100%; color: white; text-align: center; font-size: 1rem; text-shadow: rgb(0, 0, 0) 2px 2px 4px; pointer-events: none; z-index: 1;"></div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Season/Episode Selector for TV Shows -->
                     <div class="season-selector" id="seasonSelector" style="display: none;">
@@ -1353,61 +1399,6 @@
 
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- Provider Selection Modal -->
-    <div class="modal" id="providerModal" role="dialog" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Select Video Provider</h2>
-                <button class="close-modal" id="closeProviderModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="provider-list">
-                    <div class="selector-group">
-                        <label for="providerSelect">Select Provider</label>
-                        <select class="selector-select" id="providerSelect" name="providerSelect">
-                            <option value="">Select Provider</option>
-                            <option value="111movies">111Movies</option>
-                            <option value="autoembed.pro">AutoEmbed.pro</option>
-                            <option value="moviemaze.cc">MovieMaze.cc</option>
-                            <option value="videasy">VideoEasy</option>
-                            <option value="vidfast">Vidfast</option>
-                            <option value="vidking.net">VidKing.net</option>
-                            <option value="vidlink">VidLink</option>
-                            <option value="vidora.su">Vidora.su</option>
-                            <option value="vidplus.to">VidPlus.to</option>
-                            <option value="vidsrc">Vidsrc</option>
-                            <option value="vidsrc.to">Vidsrc.to</option>
-                            <option value="vixsrc.to">VixSrc.to</option>
-                        </select>
-                    </div>
-                    <div class="selector-group">
-                        <label for="videoLink" class="visually-hidden">Video Link</label>
-                        <input type="text" readonly id="videoLink" class="search-box" style="display: none;">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Video Player Modal -->
-    <div class="video-modal" id="videoModal" role="dialog" aria-modal="true">
-        <div class="video-modal-content">
-            <div class="video-header">
-                <div class="video-title" id="videoTitle">Now Playing</div>
-                <div class="video-quality">HD</div>
-                <button class="close-video" id="closeVideo">&times;</button>
-            </div>
-            <div class="video-player">
-                <div class="video-loading" id="videoLoading">
-                    <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                    <span>Loading stream...</span>
-                </div>
-                <iframe class="stream-iframe" id="streamIframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"
-                    referrerpolicy="strict-origin-when-cross-origin">
-                </iframe>
             </div>
         </div>
     </div>
@@ -1459,18 +1450,12 @@
         const startWatchingBtn = document.getElementById('startWatchingBtn');
         const moreInfoBtn = document.getElementById('moreInfoBtn');
 
-        // Video Modal Elements
-        const videoModal = document.getElementById('videoModal');
-        let streamIframe = document.getElementById('streamIframe'); // Use let to allow reassignment
-        const videoTitle = document.getElementById('videoTitle');
-        const videoLoading = document.getElementById('videoLoading');
-        const closeVideo = document.getElementById('closeVideo');
-
-        // Provider Modal Elements
-        const providerModal = document.getElementById('providerModal');
-        const closeProviderModal = document.getElementById('closeProviderModal');
-        const providerSelect = document.getElementById('providerSelect');
-        const videoLink = document.getElementById('videoLink');
+        // Inline Streaming Elements
+        const streamingSection = document.getElementById('streamingSection');
+        const inlineProviderSelect = document.getElementById('inlineProviderSelect');
+        const refreshStreamBtn = document.getElementById('refreshStreamBtn');
+        const inlineStreamIframe = document.getElementById('inlineStreamIframe');
+        const inlineVideoTitle = document.getElementById('inlineVideoTitle');
 
         // Search suggestions
         function handleSearchInput() {
@@ -1571,16 +1556,6 @@
                 btn.addEventListener('click', () => switchGenre(btn.dataset.genre));
             });
 
-            closeProviderModal.addEventListener('click', () => providerModal.style.display = 'none');
-
-            providerModal.addEventListener('click', (e) => {
-                if (e.target === providerModal) {
-                    providerModal.style.display = 'none';
-                }
-            });
-
-            providerSelect.addEventListener('change', handleProviderChange);
-
             loadMoreBtn.addEventListener('click', loadMore);
             closeModal.addEventListener('click', () => detailModal.style.display = 'none');
 
@@ -1593,24 +1568,10 @@
 
             // Watch button in modal
             watchBtn.addEventListener('click', () => {
-                playVideo(currentItem);
+                showInlinePlayer();
             });
 
-            // Close video modal and stop video
-            closeVideo.addEventListener('click', () => {
-                stopVideo();
-                videoModal.style.display = 'none';
-                detailModal.style.display = 'block';
-            });
-
-            // Also stop video when pressing ESC key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && videoModal.style.display === 'block') {
-                    stopVideo();
-                    videoModal.style.display = 'none';
-                    detailModal.style.display = 'block';
-                }
-            });
+            inlineProviderSelect.addEventListener('change', handleInlineProviderChange);
 
             // Season selection change
             seasonSelect.addEventListener('change', (e) => {
@@ -1636,33 +1597,6 @@
                 }
             });
 
-        }
-
-        // Handle provider select change
-        async function handleProviderChange() {
-            const provider = providerSelect.value;
-            if (!provider) {
-                videoLink.value = '';
-                return;
-            }
-
-            try {
-                const url = generateFallbackUrl(provider);
-                if (url) {
-                    videoLink.value = url; // Keep for reference, though hidden
-                    playSelectedVideo(url, provider);
-                } else {
-                    console.error('Could not generate URL for provider:', provider);
-                }
-            } catch (error) {
-                console.error('Error getting provider URL:', error);
-                // Fallback to direct URL generation
-                const fallbackUrl = generateFallbackUrl(provider);
-                if (fallbackUrl) {
-                    videoLink.value = fallbackUrl;
-                    playSelectedVideo(fallbackUrl, provider);
-                }
-            }
         }
 
         // Fallback URL generation (in case worker.js fails)
@@ -1703,18 +1637,6 @@
             }
         }
 
-        // Play selected video
-        function playSelectedVideo(url, provider) {
-            videoModal.style.display = 'block';
-            providerModal.style.display = 'none';
-            detailModal.style.display = 'none';
-
-            videoLoading.style.display = 'flex';
-            streamIframe.src = 'about:blank'; // Clear previous content
-            streamIframe.src = url;
-            videoTitle.textContent = `${currentMode === 'movie' ? currentItem.title : currentItem.name} - Playing from ${provider}`;
-        }
-
         // Update episodes for selected season
         function updateEpisodesForSeason(seasonNumber) {
             const season = tvSeasons.find(s => s.season_number === seasonNumber);
@@ -1743,10 +1665,7 @@
 
         // Function to stop video and audio
         function stopVideo() {
-            if (streamIframe) {
-                streamIframe.src = 'about:blank';
-            }
-            videoLoading.style.display = 'flex';
+            inlineStreamIframe.src = 'about:blank';
         }
 
         // Handle search
@@ -1898,6 +1817,10 @@
                 currentItem = item;
 
                 const title = currentMode === 'movie' ? item.title : item.name;
+                // Reset inline player on new details view
+                watchBtn.style.display = 'block';
+                streamingSection.style.display = 'none';
+                stopVideo();
                 const date = currentMode === 'movie' ? item.release_date : item.first_air_date;
                 const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : 'https://via.placeholder.com/780x1170/1a1a2e/00FF9D?text=No+Image';
 
@@ -2080,12 +2003,54 @@
             if (item) currentItem = item;
             currentSeason = season;
             currentEpisode = episode;
-            detailModal.style.display = 'none';
-            providerSelect.value = '';
-            videoLink.value = '';
-            providerModal.style.display = 'block';
+            showDetails(item.id).then(() => {
+                showInlinePlayer();
+            });
         }
 
+        // Show the inline video player
+        function showInlinePlayer() {
+            watchBtn.style.display = 'none';
+            streamingSection.style.display = 'block';
+            populateInlineProviders();
+
+            // Load default provider
+            const defaultProvider = 'vidsrc';
+            inlineProviderSelect.value = defaultProvider;
+            loadInlineStream(defaultProvider);
+        }
+
+        function populateInlineProviders() {
+            const providers = {
+                'vidsrc': 'Vidsrc',
+                'vidsrc.to': 'Vidsrc.to',
+                'autoembed.pro': 'AutoEmbed.pro',
+                '111movies': '111Movies',
+                'moviemaze.cc': 'MovieMaze.cc',
+                'vidora.su': 'Vidora.su',
+                'vidlink': 'VidLink',
+                'vixsrc.to': 'VixSrc.to',
+            };
+            inlineProviderSelect.innerHTML = '';
+            for (const [value, name] of Object.entries(providers)) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = name;
+                inlineProviderSelect.appendChild(option);
+            }
+        }
+
+        function handleInlineProviderChange() {
+            const provider = inlineProviderSelect.value;
+            loadInlineStream(provider);
+        }
+
+        function loadInlineStream(provider) {
+            const url = generateFallbackUrl(provider);
+            inlineStreamIframe.src = url;
+            const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
+            inlineVideoTitle.textContent = `${title} - Playing from ${inlineProviderSelect.options[inlineProviderSelect.selectedIndex].text}`;
+        }
         // Fetch hero movies for slideshow
         async function fetchHeroMovies() {
             try {
