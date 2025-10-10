@@ -1189,11 +1189,7 @@
 
             // Watch button in modal
             watchBtn.addEventListener('click', () => {
-                if (currentMode === 'tv') {
-                    playVideo(currentItem, currentSeason, currentEpisode);
-                } else {
-                    playVideo(currentItem);
-                }
+                showStreamingInterface();
             });
 
             // Close video modal and stop video
@@ -1239,69 +1235,81 @@
         }
 
         // Handle provider select change
-        function handleProviderChange() {
+        async function handleProviderChange() {
             const provider = providerSelect.value;
             if (!provider) {
                 videoLink.value = '';
                 return;
             }
-            let url;
+
+            // Hide the video link input field
+            const linkGroup = videoLink.closest('.selector-group');
+            if (linkGroup) {
+                linkGroup.style.display = 'none';
+            }
+
+            try {
+                // Call worker.js to get the provider URL
+                const params = new URLSearchParams({
+                    provider: provider,
+                    itemId: currentItem.id,
+                    mode: currentMode,
+                    season: currentSeason,
+                    episode: currentEpisode
+                });
+
+                const response = await fetch(`${API_URL}/provider-url?${params}`);
+                const data = await response.json();
+
+                if (data.url) {
+                    // Keep the URL hidden but still functional
+                    videoLink.value = data.url;
+                    playSelectedVideo(data.url, provider);
+                }
+            } catch (error) {
+                console.error('Error getting provider URL:', error);
+                // Fallback to direct URL generation if worker fails
+                const fallbackUrl = generateFallbackUrl(provider);
+                videoLink.value = fallbackUrl;
+                playSelectedVideo(fallbackUrl, provider);
+            }
+        }
+
+        // Fallback URL generation (in case worker.js fails)
+        function generateFallbackUrl(provider) {
             if (currentMode === 'movie') {
-                if (provider === '111movies') {
-                    url = `https://111movies.com/movie/${currentItem.id}`;
-                } else if (provider === 'vidsrc') {
-                    url = `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
-                } else if (provider === 'autoembed.pro') {
-                    url = `https://autoembed.pro/embed/movie/${currentItem.id}`;
-                } else if (provider === 'moviemaze.cc') {
-                    url = `https://moviemaze.cc/watch/movie/${currentItem.id}`;
-                } else if (provider === 'videasy') {
-                    url = `https://player.videasy.net/movie/${currentItem.id}`;
-                } else if (provider === 'vidfast') {
-                    url = `https://vidfast.pro/movie/${currentItem.id}`;
-                } else if (provider === 'vidking.net') {
-                    url = `https://www.vidking.net/embed/movie/${currentItem.id}`;
-                } else if (provider === 'vidlink') {
-                    url = `https://vidlink.pro/movie/${currentItem.id}`;
-                } else if (provider === 'vidora.su') {
-                    url = `https://vidora.su/movie/${currentItem.id}`;
-                } else if (provider === 'vidplus.to') {
-                    url = `https://player.vidplus.to/embed/movie/${currentItem.id}`;
-                } else if (provider === 'vidsrc.to') {
-                    url = `https://vidsrc.to/embed/movie/${currentItem.id}`;
-                } else if (provider === 'vixsrc.to') {
-                    url = `https://vixsrc.to/movie/${currentItem.id}/`;
-            
+                switch (provider) {
+                    case '111movies': return `https://111movies.com/movie/${currentItem.id}`;
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
+                    case 'autoembed.pro': return `https://autoembed.pro/embed/movie/${currentItem.id}`;
+                    case 'moviemaze.cc': return `https://moviemaze.cc/watch/movie/${currentItem.id}`;
+                    case 'videasy': return `https://player.videasy.net/movie/${currentItem.id}`;
+                    case 'vidfast': return `https://vidfast.pro/movie/${currentItem.id}`;
+                    case 'vidking.net': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
+                    case 'vidlink': return `https://vidlink.pro/movie/${currentItem.id}`;
+                    case 'vidora.su': return `https://vidora.su/movie/${currentItem.id}`;
+                    case 'vidplus.to': return `https://player.vidplus.to/embed/movie/${currentItem.id}`;
+                    case 'vidsrc.to': return `https://vidsrc.to/embed/movie/${currentItem.id}`;
+                    case 'vixsrc.to': return `https://vixsrc.to/movie/${currentItem.id}/`;
+                    default: return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
                 }
             } else {
-                if (provider === '111movies') {
-                    url = `https://111movies.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidsrc') {
-                    url = `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'autoembed.pro') {
-                    url = `https://autoembed.pro/embed/tv/${currentItem.id}&season=${currentSeason}&episode=${currentEpisode}`;
-                } else if (provider === 'moviemaze.cc') {
-                    url = `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
-                } else if (provider === 'videasy') {
-                    url = `https://player.videasy.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidfast') {
-                    url = `https://vidfast.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidking.net') {
-                    url = `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidlink') {
-                    url = `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidora.su') {
-                    url = `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidplus.to') {
-                    url = `https://player.vidplus.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vidsrc.to') {
-                    url = `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                } else if (provider === 'vixsrc.to') {
-                    url = `https://vixsrc.to/tv/${currentItem.id}/${currentSeason}/${currentEpisode}/`;
-                } 
+                switch (provider) {
+                    case '111movies': return `https://111movies.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'autoembed.pro': return `https://autoembed.pro/embed/tv/${currentItem.id}&season=${currentSeason}&episode=${currentEpisode}`;
+                    case 'moviemaze.cc': return `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
+                    case 'videasy': return `https://player.videasy.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidfast': return `https://vidfast.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidking.net': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidlink': return `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidora.su': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidplus.to': return `https://player.vidplus.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrc.to': return `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vixsrc.to': return `https://vixsrc.to/tv/${currentItem.id}/${currentSeason}/${currentEpisode}/`;
+                    default: return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                }
             }
-            videoLink.value = url;
-            playSelectedVideo(url, provider);
         }
 
         // Play selected video
@@ -1540,6 +1548,159 @@
                     seasonSelect.appendChild(option);
                 }
                 updateEpisodesForSeason(1);
+            }
+        }
+
+        // Show streaming interface
+        function showStreamingInterface() {
+            // Hide detail modal
+            detailModal.style.display = 'none';
+
+            // Create streaming interface HTML
+            const streamingDiv = document.createElement('div');
+            streamingDiv.id = 'streamingContainer';
+            streamingDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.95);
+                z-index: 2000;
+                display: flex;
+                flex-direction: column;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
+
+            const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
+            streamingDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: white;">
+                    <h3>Watch Content</h3>
+                    <button id="closeStreaming" style="background: rgba(255, 255, 255, 0.1); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                </div>
+                <div class="provider-controls" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                    <select id="streamingSeasonSelect" style="display: ${currentMode === 'tv' ? 'block' : 'none'}; background: var(--dark); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; min-width: 120px;">
+                        <!-- Seasons populated dynamically -->
+                    </select>
+                    <select id="streamingEpisodeSelect" style="display: ${currentMode === 'tv' ? 'block' : 'none'}; background: var(--dark); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; min-width: 120px;">
+                        <!-- Episodes populated dynamically -->
+                    </select>
+                    <select id="streamingProviderSelect" style="background: var(--dark); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; min-width: 150px;">
+                        <option value="alpha">Alpha</option>
+                        <option value="bravo">Bravo</option>
+                        <option value="charlie">Charlie</option>
+                        <option value="delta">Delta</option>
+                        <option value="echo">Echo</option>
+                        <option value="foxtrot">Foxtrot</option>
+                        <option value="golf">Golf</option>
+                        <option value="hotel">Hotel</option>
+                        <option value="india">India</option>
+                        <option value="juliet">Juliet</option>
+                        <option value="kilo">Kilo</option>
+                        <option value="lima">Lima</option>
+                        <option value="mike">Mike</option>
+                        <option value="november">November</option>
+                        <option value="oscar">Oscar</option>
+                        <option value="papa">Papa</option>
+                        <option value="quebec">Quebec</option>
+                        <option value="romeo">Romeo</option>
+                        <option value="sierra">Sierra</option>
+                        <option value="tango">Tango</option>
+                        <option value="uniform">Uniform</option>
+                        <option value="victor">Victor</option>
+                        <option value="whiskey">Whiskey</option>
+                        <option value="xray">X-ray</option>
+                        <option value="yankee">Yankee</option>
+                        <option value="zulu">Zulu</option>
+                    </select>
+                    <button id="refreshStreamingButton" style="background-color: var(--primary); color: var(--secondary); border: none; padding: 0.7rem 1.5rem; border-radius: 30px; font-weight: 600; cursor: pointer; transition: all 0.3s;">Refresh</button>
+                </div>
+                <div style="flex: 1; position: relative; background: #000; border-radius: 10px; overflow: hidden;">
+                    <iframe id="streamingIframe" width="100%" height="100%" frameborder="0" allowfullscreen style="border: none;"></iframe>
+                    <div id="streamingOverlay" style="position: absolute; bottom: 50px; width: 100%; color: white; text-align: center; font-size: 18px; text-shadow: rgb(0, 0, 0) 2px 2px 4px; pointer-events: none; z-index: 1000;">${title}</div>
+                </div>
+            `;
+
+            document.body.appendChild(streamingDiv);
+
+            // Set up event listeners for the streaming interface
+            setupStreamingInterfaceEvents();
+
+            // Load initial content
+            loadStreamingContent();
+        }
+
+        // Set up streaming interface events
+        function setupStreamingInterfaceEvents() {
+            const closeBtn = document.getElementById('closeStreaming');
+            const providerSelect = document.getElementById('streamingProviderSelect');
+            const refreshBtn = document.getElementById('refreshStreamingButton');
+            const seasonSelect = document.getElementById('streamingSeasonSelect');
+            const episodeSelect = document.getElementById('streamingEpisodeSelect');
+
+            closeBtn.addEventListener('click', () => {
+                const container = document.getElementById('streamingContainer');
+                if (container) {
+                    container.remove();
+                }
+            });
+
+            providerSelect.addEventListener('change', loadStreamingContent);
+            refreshBtn.addEventListener('click', loadStreamingContent);
+
+            if (currentMode === 'tv') {
+                seasonSelect.addEventListener('change', () => {
+                    currentSeason = parseInt(seasonSelect.value);
+                    loadStreamingContent();
+                });
+                episodeSelect.addEventListener('change', () => {
+                    currentEpisode = parseInt(episodeSelect.value);
+                    loadStreamingContent();
+                });
+            }
+        }
+
+        // Load streaming content
+        async function loadStreamingContent() {
+            const provider = document.getElementById('streamingProviderSelect').value || 'vidora';
+            const iframe = document.getElementById('streamingIframe');
+            const overlay = document.getElementById('streamingOverlay');
+
+            try {
+                // Call worker.js to get the default streaming URL
+                const params = new URLSearchParams({
+                    itemId: currentItem.id,
+                    mode: currentMode,
+                    season: currentSeason,
+                    episode: currentEpisode
+                });
+
+                const response = await fetch(`${API_URL}/streaming-url?${params}`);
+                const data = await response.json();
+
+                if (data.url) {
+                    iframe.src = data.url;
+                } else {
+                    // Fallback if worker fails
+                    iframe.src = generateLocalStreamingUrl();
+                }
+            } catch (error) {
+                console.error('Error getting streaming URL:', error);
+                // Fallback to local URL generation
+                iframe.src = generateLocalStreamingUrl();
+            }
+
+            const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
+            overlay.textContent = title;
+        }
+
+        // Fallback URL generation for streaming (local)
+        function generateLocalStreamingUrl() {
+            if (currentMode === 'movie') {
+                return `https://vidrock.net/movie/${currentItem.id}?ads=0&disable_ads=1`;
+            } else {
+                return `https://vidrock.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}?ads=0&disable_ads=1`;
             }
         }
 
