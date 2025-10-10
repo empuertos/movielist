@@ -217,6 +217,72 @@
             color: var(--secondary);
         }
 
+        .genre-filter {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .genre-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            justify-content: center;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .genre-buttons::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .genre-buttons::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .genre-buttons::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .genre-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text);
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-height: 40px;
+        }
+
+        .genre-btn:hover {
+            background: rgba(0, 255, 157, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 157, 0.3);
+        }
+
+        .genre-btn.active {
+            background: var(--primary);
+            color: var(--secondary);
+            border-color: var(--primary);
+        }
+
         .content-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -651,93 +717,348 @@
             .navbar {
                 flex-direction: column;
                 gap: 1rem;
+                padding: 0.5rem 1rem;
             }
 
-            .logo img {
-                width: 18px;
-                height: 18px;
+            .logo h1 {
+                font-size: 1.5rem;
             }
 
             .search-container {
                 width: 100%;
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
             .search-box {
                 width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .search-btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
             }
 
             .search-suggestions {
                 max-height: 200px;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                z-index: 1001;
             }
 
             .hero {
                 height: 50vh;
-                padding: 2rem;
+                padding: 1.5rem;
+                margin-bottom: 1rem;
             }
 
             .hero h2 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero-btns {
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
             .content-grid {
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1rem;
             }
 
             .modal-body {
                 flex-direction: column;
                 padding: 1rem;
+                gap: 1rem;
             }
+
             .modal-header {
                 padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
             }
+
+            .modal-title {
+                font-size: 1.3rem;
+                text-align: center;
+            }
+
             .modal-poster {
                 width: 100%;
-                max-width: 300px;
+                max-width: 250px;
                 align-self: center;
             }
 
+            /* Enhanced Streaming Interface for Mobile */
+            .streamingContainer {
+                padding: 10px !important;
+            }
+
+            .provider-controls {
+                flex-direction: column !important;
+                gap: 10px !important;
+                align-items: stretch !important;
+            }
+
+            .provider-controls select {
+                width: 100% !important;
+                min-width: unset !important;
+                font-size: 14px !important;
+                padding: 0.8rem !important;
+            }
+
+            .provider-controls button {
+                width: 100% !important;
+                font-size: 14px !important;
+                padding: 0.8rem !important;
+            }
+
+            .streamingOverlay {
+                font-size: 14px !important;
+                bottom: 20px !important;
+                padding: 0 10px !important;
+            }
+
             .video-modal-content {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                border-radius: 0;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
             }
 
             .video-header {
-                padding: 0.8rem 1rem;
+                padding: 0.5rem 1rem !important;
+                flex-direction: column !important;
+                gap: 10px !important;
             }
 
             .video-title {
-                font-size: 1rem;
-                max-width: 70%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                font-size: 0.9rem !important;
+                max-width: 100% !important;
+                text-align: center !important;
             }
 
             .close-video {
-                width: 40px;
-                height: 40px;
-                font-size: 1.5rem;
+                width: 35px !important;
+                height: 35px !important;
+                font-size: 1.2rem !important;
             }
 
             .selector-row {
-                flex-direction: column;
-                align-items: flex-start;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 1rem !important;
             }
 
             .selector-group {
-                width: 100%;
+                width: 100% !important;
             }
 
             .selector-select {
-                width: 100%;
+                width: 100% !important;
+                font-size: 14px !important;
+            }
+
+            /* Mode toggle mobile */
+            .mode-toggle {
+                justify-content: center;
+                margin: 1rem auto;
+            }
+
+            .mode-btn {
+                font-size: 14px;
+                padding: 0.6rem 1.2rem;
+            }
+
+            /* Genre filter mobile */
+            .genre-filter {
+                margin: 1.5rem 0;
+                padding: 1rem;
+            }
+
+            .filter-title {
+                font-size: 1.1rem;
+            }
+
+            .genre-buttons {
+                max-height: 150px;
+                gap: 0.5rem;
+                justify-content: flex-start;
+            }
+
+            .genre-btn {
+                font-size: 0.8rem;
+                padding: 0.5rem 1rem;
+                min-height: 36px;
+            }
+
+            /* Loading spinner mobile */
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+            }
+
+            /* Card hover effects disabled on mobile */
+            .content-card:hover {
+                transform: none;
+            }
+
+            .watch-btn-card:hover {
+                transform: none;
             }
         }
 
         @media (max-width: 480px) {
             .watch-btn {
                 width: 100%;
+            }
+
+            /* Extra small mobile devices */
+            .hero {
+                height: 40vh;
+                padding: 1rem;
+            }
+
+            .hero h2 {
+                font-size: 1.5rem;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+            }
+
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 0.8rem;
+            }
+
+            .card-title {
+                font-size: 0.9rem;
+            }
+
+            .card-info {
+                font-size: 0.8rem;
+            }
+
+            .modal-title {
+                font-size: 1.1rem;
+            }
+
+            .modal-body {
+                padding: 0.8rem;
+            }
+
+            /* Streaming interface for very small screens */
+            .streamingContainer {
+                padding: 5px !important;
+            }
+
+            .provider-controls {
+                gap: 8px !important;
+            }
+
+            .provider-controls select,
+            .provider-controls button {
+                font-size: 12px !important;
+                padding: 0.6rem !important;
+            }
+
+            .streamingOverlay {
+                font-size: 12px !important;
+                bottom: 10px !important;
+            }
+
+            /* Genre filter for very small screens */
+            .genre-filter {
+                margin: 1rem 0;
+                padding: 0.8rem;
+            }
+
+            .filter-title {
+                font-size: 1rem;
+            }
+
+            .genre-buttons {
+                max-height: 120px;
+                gap: 0.3rem;
+            }
+
+            .genre-btn {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+                min-height: 32px;
+            }
+        }
+
+        /* Landscape orientation on mobile */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .hero {
+                height: 70vh;
+            }
+
+            .streamingContainer {
+                padding: 5px !important;
+            }
+
+            .provider-controls {
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                gap: 5px !important;
+            }
+
+            .provider-controls select {
+                flex: 1 !important;
+                min-width: 120px !important;
+            }
+
+            .provider-controls button {
+                flex-shrink: 0 !important;
+                min-width: 100px !important;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            /* Larger touch targets */
+            .btn {
+                min-height: 44px;
+                padding: 1rem 2rem;
+            }
+
+            .mode-btn {
+                min-height: 44px;
+                padding: 0.8rem 1.5rem;
+            }
+
+            .content-card {
+                cursor: default;
+            }
+
+            /* Remove hover effects on touch devices */
+            .btn:hover {
+                transform: none;
+            }
+
+            .mode-btn:hover {
+                transform: none;
+            }
+
+            /* Better scrolling for touch */
+            .content-grid {
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+            }
+
+            .cast-grid {
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
             }
         }
 
@@ -894,6 +1215,33 @@
             <button class="mode-btn" id="tvMode">TV Shows</button>
         </div>
 
+        <!-- Genre Filter Section -->
+        <div class="genre-filter">
+            <h3 class="filter-title">Filter by Genre</h3>
+            <div class="genre-buttons" id="genreButtons">
+                <button class="genre-btn active" data-genre="">All</button>
+                <button class="genre-btn" data-genre="28">Action</button>
+                <button class="genre-btn" data-genre="12">Adventure</button>
+                <button class="genre-btn" data-genre="16">Animation</button>
+                <button class="genre-btn" data-genre="35">Comedy</button>
+                <button class="genre-btn" data-genre="80">Crime</button>
+                <button class="genre-btn" data-genre="99">Documentary</button>
+                <button class="genre-btn" data-genre="18">Drama</button>
+                <button class="genre-btn" data-genre="10751">Family</button>
+                <button class="genre-btn" data-genre="14">Fantasy</button>
+                <button class="genre-btn" data-genre="36">History</button>
+                <button class="genre-btn" data-genre="27">Horror</button>
+                <button class="genre-btn" data-genre="10402">Music</button>
+                <button class="genre-btn" data-genre="9648">Mystery</button>
+                <button class="genre-btn" data-genre="10749">Romance</button>
+                <button class="genre-btn" data-genre="878">Science Fiction</button>
+                <button class="genre-btn" data-genre="10770">TV Movie</button>
+                <button class="genre-btn" data-genre="53">Thriller</button>
+                <button class="genre-btn" data-genre="10752">War</button>
+                <button class="genre-btn" data-genre="37">Western</button>
+            </div>
+        </div>
+
         <h2 class="section-title"><i class="fas fa-fire"></i> Popular Now</h2>
         <div class="content-grid" id="contentGrid">
             <!-- Content will be loaded here -->
@@ -1023,6 +1371,7 @@
         // State variables
         let currentPage = 1;
         let currentQuery = '';
+        let currentGenre = '';
         let isFetching = false;
         let currentMode = 'movie';
         let currentItem = null;
@@ -1164,8 +1513,16 @@
             });
             searchInput.addEventListener('input', handleSearchInput);
             searchInput.addEventListener('blur', () => setTimeout(hideSuggestions, 200));
-            
+
             movieModeBtn.addEventListener('click', () => switchMode('movie'));
+            tvModeBtn.addEventListener('click', () => switchMode('tv'));
+
+            // Genre filter event listeners
+            const genreButtons = document.querySelectorAll('.genre-btn');
+            genreButtons.forEach(btn => {
+                btn.addEventListener('click', () => switchGenre(btn.dataset.genre));
+            });
+
             closeProviderModal.addEventListener('click', () => providerModal.style.display = 'none');
 
             providerModal.addEventListener('click', (e) => {
@@ -1175,11 +1532,10 @@
             });
 
             providerSelect.addEventListener('change', handleProviderChange);
-            tvModeBtn.addEventListener('click', () => switchMode('tv'));
-            
+
             loadMoreBtn.addEventListener('click', loadMore);
             closeModal.addEventListener('click', () => detailModal.style.display = 'none');
-            
+
             // Close modals when clicking outside
             detailModal.addEventListener('click', (e) => {
                 if (e.target === detailModal) {
@@ -1361,8 +1717,15 @@
         function handleSearch() {
             currentQuery = searchInput.value.trim();
             currentPage = 1;
+            currentGenre = ''; // Reset genre when searching
             contentGrid.innerHTML = '';
             hideSuggestions();
+
+            // Reset genre buttons to "All"
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.genre === '');
+            });
+
             fetchContent();
         }
 
@@ -1370,12 +1733,32 @@
         function switchMode(mode) {
             currentMode = mode;
             currentPage = 1;
+            currentGenre = ''; // Reset genre when switching modes
             contentGrid.innerHTML = '';
-            
+
             // Update active button
             movieModeBtn.classList.toggle('active', mode === 'movie');
             tvModeBtn.classList.toggle('active', mode === 'tv');
-            
+
+            // Reset genre buttons
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.genre === '');
+            });
+
+            fetchContent();
+        }
+
+        // Switch genre filter
+        function switchGenre(genre) {
+            currentGenre = genre;
+            currentPage = 1;
+            contentGrid.innerHTML = '';
+
+            // Update active genre button
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.genre === genre);
+            });
+
             fetchContent();
         }
 
@@ -1383,27 +1766,37 @@
         async function fetchContent() {
             if (isFetching) return;
             isFetching = true;
-            
+
             loadingElement.style.display = 'block';
             loadMoreBtn.style.display = 'none';
 
             try {
                 let endpoint;
+                const baseParams = `page=${currentPage}${currentGenre ? `&with_genres=${currentGenre}` : ''}`;
+
                 if (currentQuery) {
                     endpoint = currentMode === 'movie'
-                        ? `${API_URL}/search/movie?query=${currentQuery}&page=${currentPage}`
-                        : `${API_URL}/search/tv?query=${currentQuery}&page=${currentPage}`;
+                        ? `${API_URL}/search/movie?query=${currentQuery}&${baseParams}`
+                        : `${API_URL}/search/tv?query=${currentQuery}&${baseParams}`;
                 } else {
-                    endpoint = currentMode === 'movie'
-                        ? `${API_URL}/movie/popular?page=${currentPage}`
-                        : `${API_URL}/tv/popular?page=${currentPage}`;
+                    if (currentGenre) {
+                        // Discover endpoint with genre filter
+                        endpoint = currentMode === 'movie'
+                            ? `${API_URL}/discover/movie?${baseParams}`
+                            : `${API_URL}/discover/tv?${baseParams}`;
+                    } else {
+                        // Popular endpoint without genre filter
+                        endpoint = currentMode === 'movie'
+                            ? `${API_URL}/movie/popular?page=${currentPage}`
+                            : `${API_URL}/tv/popular?page=${currentPage}`;
+                    }
                 }
 
                 const response = await fetch(endpoint);
                 const data = await response.json();
-                
+
                 displayContent(data.results);
-                
+
                 // Show load more button if there are more pages
                 if (data.page < data.total_pages) {
                     loadMoreBtn.style.display = 'block';
@@ -1613,6 +2006,11 @@
                         <option value="xray">X-ray</option>
                         <option value="yankee">Yankee</option>
                         <option value="zulu">Zulu</option>
+                        <option value="extra1">Extra 1</option>
+                        <option value="extra2">Extra 2</option>
+                        <option value="extra3">Extra 3</option>
+                        <option value="extra4">Extra 4</option>
+                        <option value="extra5">Extra 5</option>
                     </select>
                     <button id="refreshStreamingButton" style="background-color: var(--primary); color: var(--secondary); border: none; padding: 0.7rem 1.5rem; border-radius: 30px; font-weight: 600; cursor: pointer; transition: all 0.3s;">Refresh</button>
                 </div>
@@ -1627,7 +2025,7 @@
             // Set up event listeners for the streaming interface
             setupStreamingInterfaceEvents();
 
-            // Load initial content
+            // Don't load anything initially - wait for provider selection
             loadStreamingContent();
         }
 
@@ -1663,44 +2061,83 @@
 
         // Load streaming content
         async function loadStreamingContent() {
-            const provider = document.getElementById('streamingProviderSelect').value || 'vidora';
+            const providerSelect = document.getElementById('streamingProviderSelect');
+            const selectedProvider = providerSelect.value;
             const iframe = document.getElementById('streamingIframe');
             const overlay = document.getElementById('streamingOverlay');
 
+            // Don't load anything if no provider is selected
+            if (!selectedProvider) {
+                iframe.src = 'about:blank';
+                overlay.textContent = 'Please select a provider to start streaming';
+                return;
+            }
+
             try {
-                // Call worker.js to get the default streaming URL
+                // Call worker.js to get the provider URL
                 const params = new URLSearchParams({
+                    provider: selectedProvider,
                     itemId: currentItem.id,
                     mode: currentMode,
                     season: currentSeason,
                     episode: currentEpisode
                 });
 
-                const response = await fetch(`${API_URL}/streaming-url?${params}`);
+                const response = await fetch(`${API_URL}/provider-url?${params}`);
                 const data = await response.json();
 
                 if (data.url) {
                     iframe.src = data.url;
                 } else {
                     // Fallback if worker fails
-                    iframe.src = generateLocalStreamingUrl();
+                    iframe.src = generateFallbackUrl(selectedProvider);
                 }
             } catch (error) {
-                console.error('Error getting streaming URL:', error);
+                console.error('Error getting provider URL:', error);
                 // Fallback to local URL generation
-                iframe.src = generateLocalStreamingUrl();
+                iframe.src = generateFallbackUrl(selectedProvider);
             }
 
             const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
             overlay.textContent = title;
         }
 
-        // Fallback URL generation for streaming (local)
-        function generateLocalStreamingUrl() {
+        // Fallback URL generation (in case worker.js fails)
+        function generateFallbackUrl(provider) {
             if (currentMode === 'movie') {
-                return `https://vidrock.net/movie/${currentItem.id}?ads=0&disable_ads=1`;
+                switch (provider) {
+                    case 'alpha': return `https://vidora.su/movie/${currentItem.id}`;
+                    case 'bravo': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
+                    case 'charlie': return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
+                    case 'delta': return `https://autoembed.pro/embed/movie/${currentItem.id}`;
+                    case 'echo': return `https://moviemaze.cc/watch/movie/${currentItem.id}`;
+                    case 'foxtrot': return `https://player.videasy.net/movie/${currentItem.id}`;
+                    case 'golf': return `https://vidfast.pro/movie/${currentItem.id}`;
+                    case 'hotel': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
+                    case 'india': return `https://vidlink.pro/movie/${currentItem.id}`;
+                    case 'juliet': return `https://vidora.su/movie/${currentItem.id}`;
+                    case 'kilo': return `https://player.vidplus.to/embed/movie/${currentItem.id}`;
+                    case 'lima': return `https://vidsrc.to/embed/movie/${currentItem.id}`;
+                    case 'mike': return `https://vixsrc.to/movie/${currentItem.id}/`;
+                    default: return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
+                }
             } else {
-                return `https://vidrock.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}?ads=0&disable_ads=1`;
+                switch (provider) {
+                    case 'alpha': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'bravo': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'charlie': return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'delta': return `https://autoembed.pro/embed/tv/${currentItem.id}&season=${currentSeason}&episode=${currentEpisode}`;
+                    case 'echo': return `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
+                    case 'foxtrot': return `https://player.videasy.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'golf': return `https://vidfast.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'hotel': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'india': return `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'juliet': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'kilo': return `https://player.vidplus.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'lima': return `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'mike': return `https://vixsrc.to/tv/${currentItem.id}/${currentSeason}/${currentEpisode}/`;
+                    default: return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                }
             }
         }
 
