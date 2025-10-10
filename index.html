@@ -482,36 +482,6 @@
             justify-content: center;
             margin-top: 2rem;
         }
-        
-        /* Inline Streaming Section */
-        .streaming-section {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .streaming-section h3 {
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-        .streaming-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        .streaming-controls .selector-select {
-            flex-grow: 1;
-        }
-        .streaming-controls .btn-refresh {
-            background-color: var(--primary);
-            color: var(--secondary);
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
 
         .watch-btn:hover {
             background-color: #ff1a4f;
@@ -1366,22 +1336,6 @@
                         <h3>Overview</h3>
                         <p id="modalOverview">No overview available.</p>
                         <button class="watch-btn" id="watchBtn"><i class="fas fa-play" aria-hidden="true"></i> Watch Now Full Movie</button>
-                        <!-- Inline Streaming Section -->
-                        <div class="streaming-section" id="streamingSection" style="display: none;">
-                            <h3>Watch Content</h3>
-                            <div class="streaming-controls">
-                                <select class="selector-select" id="inlineProviderSelect">
-                                    <!-- Providers will be populated here -->
-                                </select>
-                                <button class="btn-refresh" id="refreshStreamBtn">Refresh</button>
-                            </div>
-                            <div class="video-player" style="height: 500px; background: #000; border-radius: 10px; overflow: hidden; position: relative;">
-                                <iframe class="stream-iframe" id="inlineStreamIframe" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"
-                                    referrerpolicy="strict-origin-when-cross-origin" style="width: 100%; height: 100%; border: none;">
-                                </iframe>
-                                <div id="inlineVideoTitle" style="position: absolute; bottom: 20px; width: 100%; color: white; text-align: center; font-size: 1rem; text-shadow: rgb(0, 0, 0) 2px 2px 4px; pointer-events: none; z-index: 1;"></div>
-                            </div>
-                        </div>
                     </div>
                     <!-- Season/Episode Selector for TV Shows -->
                     <div class="season-selector" id="seasonSelector" style="display: none;">
@@ -1449,13 +1403,6 @@
         const watchBtn = document.getElementById('watchBtn');
         const startWatchingBtn = document.getElementById('startWatchingBtn');
         const moreInfoBtn = document.getElementById('moreInfoBtn');
-
-        // Inline Streaming Elements
-        const streamingSection = document.getElementById('streamingSection');
-        const inlineProviderSelect = document.getElementById('inlineProviderSelect');
-        const refreshStreamBtn = document.getElementById('refreshStreamBtn');
-        const inlineStreamIframe = document.getElementById('inlineStreamIframe');
-        const inlineVideoTitle = document.getElementById('inlineVideoTitle');
 
         // Search suggestions
         function handleSearchInput() {
@@ -1568,12 +1515,10 @@
 
             // Watch button in modal
             watchBtn.addEventListener('click', () => {
-                showInlinePlayer();
+                openPlayerInNewTab();
             });
 
-            inlineProviderSelect.addEventListener('change', handleInlineProviderChange);
-
-            // Season selection change
+            // Season/Episode selection change
             seasonSelect.addEventListener('change', (e) => {
                 currentSeason = parseInt(e.target.value);
                 updateEpisodesForSeason(currentSeason);
@@ -1582,6 +1527,10 @@
             // Episode selection change
             episodeSelect.addEventListener('change', (e) => {
                 currentEpisode = parseInt(e.target.value);
+                // If player is already open in another tab, this data won't auto-update there.
+                // For a better UX, we could use localStorage to sync, but for now,
+                // changing the episode here just prepares it for the *next* time "Watch" is clicked.
+                console.log(`Episode set to: ${currentEpisode}`);
             });
 
             // Hero buttons
@@ -1665,7 +1614,7 @@
 
         // Function to stop video and audio
         function stopVideo() {
-            inlineStreamIframe.src = 'about:blank';
+            // This function is now a placeholder, as video plays in a new tab.
         }
 
         // Handle search
@@ -1817,10 +1766,6 @@
                 currentItem = item;
 
                 const title = currentMode === 'movie' ? item.title : item.name;
-                // Reset inline player on new details view
-                watchBtn.style.display = 'block';
-                streamingSection.style.display = 'none';
-                stopVideo();
                 const date = currentMode === 'movie' ? item.release_date : item.first_air_date;
                 const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : 'https://via.placeholder.com/780x1170/1a1a2e/00FF9D?text=No+Image';
 
@@ -2003,54 +1948,108 @@
             if (item) currentItem = item;
             currentSeason = season;
             currentEpisode = episode;
-            showDetails(item.id).then(() => {
-                showInlinePlayer();
-            });
+            openPlayerInNewTab();
         }
 
-        // Show the inline video player
-        function showInlinePlayer() {
-            watchBtn.style.display = 'none';
-            streamingSection.style.display = 'block';
-            populateInlineProviders();
-
-            // Load default provider
-            const defaultProvider = 'vidsrc';
-            inlineProviderSelect.value = defaultProvider;
-            loadInlineStream(defaultProvider);
-        }
-
-        function populateInlineProviders() {
-            const providers = {
-                'vidsrc': 'Vidsrc',
-                'vidsrc.to': 'Vidsrc.to',
-                'autoembed.pro': 'AutoEmbed.pro',
-                '111movies': '111Movies',
-                'moviemaze.cc': 'MovieMaze.cc',
-                'vidora.su': 'Vidora.su',
-                'vidlink': 'VidLink',
-                'vixsrc.to': 'VixSrc.to',
+        function openPlayerInNewTab() {
+            // Store necessary info in localStorage for the new tab to access
+            const playerData = {
+                item: currentItem,
+                mode: currentMode,
+                season: currentSeason,
+                episode: currentEpisode
             };
-            inlineProviderSelect.innerHTML = '';
-            for (const [value, name] of Object.entries(providers)) {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = name;
-                inlineProviderSelect.appendChild(option);
+            localStorage.setItem('streamflixPlayerData', JSON.stringify(playerData));
+
+            const playerWindow = window.open('', '_blank');
+            if (playerWindow) {
+                playerWindow.document.write(generatePlayerPageHTML());
+                playerWindow.document.close();
+            } else {
+                alert('Please allow popups for this site to watch content.');
             }
         }
 
-        function handleInlineProviderChange() {
-            const provider = inlineProviderSelect.value;
-            loadInlineStream(provider);
+        function generatePlayerPageHTML() {
+            const title = currentMode === 'movie' ? currentItem.title : `${currentItem.name} - S${currentSeason}E${currentEpisode}`;
+            return `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Now Playing: ${title}</title>
+                    <style>
+                        :root { --primary: #00FF9D; --secondary: #1a1a2e; --dark: #16213e; --text: #e6e6e6; }
+                        body { background-color: var(--secondary); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+                        .player-controls { background-color: var(--dark); padding: 1rem; display: flex; gap: 1rem; align-items: center; }
+                        .player-controls label { font-weight: 600; }
+                        .player-controls select { background: var(--secondary); border: 1px solid var(--primary); color: var(--text); padding: 0.5rem; border-radius: 5px; }
+                        .player-container { flex-grow: 1; background-color: #000; }
+                        iframe { width: 100%; height: 100%; border: none; }
+                    </style>
+                </head>
+                <body>
+                    <div class="player-controls">
+                        <label for="providerSelect">Provider:</label>
+                        <select id="providerSelect"></select>
+                    </div>
+                    <div class="player-container">
+                        <iframe id="streamingIframe" allowfullscreen allow="autoplay"></iframe>
+                    </div>
+                    <script>
+                        const playerData = JSON.parse(localStorage.getItem('streamflixPlayerData'));
+                        const { item, mode, season, episode } = playerData;
+                        const providerSelect = document.getElementById('providerSelect');
+                        const streamingIframe = document.getElementById('streamingIframe');
+
+                        const providers = {
+                            'vidsrc': 'Vidsrc', 'vidsrc.to': 'Vidsrc.to', 'autoembed.pro': 'AutoEmbed.pro',
+                            '111movies': '111Movies', 'moviemaze.cc': 'MovieMaze.cc', 'vidora.su': 'Vidora.su',
+                            'vidlink': 'VidLink', 'vixsrc.to': 'VixSrc.to'
+                        };
+
+                        function generateUrl(provider) {
+                            if (mode === 'movie') {
+                                switch (provider) {
+                                    case '111movies': return \`https://111movies.com/movie/\${item.id}\`;
+                                    case 'autoembed.pro': return \`https://autoembed.pro/embed/movie/\${item.id}\`;
+                                    case 'moviemaze.cc': return \`https://moviemaze.cc/watch/movie/\${item.id}\`;
+                                    case 'vidlink': return \`https://vidlink.pro/movie/\${item.id}\`;
+                                    case 'vidora.su': return \`https://vidora.su/movie/\${item.id}\`;
+                                    case 'vidsrc.to': return \`https://vidsrc.to/embed/movie/\${item.id}\`;
+                                    case 'vixsrc.to': return \`https://vixsrc.to/movie/\${item.id}/\`;
+                                    default: return \`https://vidsrc.cc/v2/embed/movie/\${item.id}\`;
+                                }
+                            } else {
+                                switch (provider) {
+                                    case '111movies': return \`https://111movies.com/tv/\${item.id}/\${season}/\${episode}\`;
+                                    case 'autoembed.pro': return \`https://autoembed.pro/embed/tv/\${item.id}&season=\${season}&episode=\${episode}\`;
+                                    case 'moviemaze.cc': return \`https://moviemaze.cc/watch/tv/\${item.id}?ep=\${episode}&season=\${season}\`;
+                                    case 'vidlink': return \`https://vidlink.pro/tv/\${item.id}/\${season}/\${episode}\`;
+                                    case 'vidora.su': return \`https://vidora.su/tv/\${item.id}/\${season}/\${episode}\`;
+                                    case 'vidsrc.to': return \`https://vidsrc.to/embed/tv/\${item.id}/\${season}/\${episode}\`;
+                                    case 'vixsrc.to': return \`https://vixsrc.to/tv/\${item.id}/\${season}/\${episode}/\`;
+                                    default: return \`https://vidsrc.cc/v2/embed/tv/\${item.id}/\${season}/\${episode}\`;
+                                }
+                            }
+                        }
+
+                        providerSelect.innerHTML = Object.entries(providers).map(([value, name]) => \`<option value="\${value}">\${name}</option>\`).join('');
+                        providerSelect.addEventListener('change', () => {
+                            const url = generateUrl(providerSelect.value);
+                            streamingIframe.src = url;
+                        });
+
+                        // Load default provider
+                        providerSelect.value = 'vidsrc';
+                        streamingIframe.src = generateUrl('vidsrc');
+                    <\/script>
+                </body>
+                </html>
+            `;
         }
 
-        function loadInlineStream(provider) {
-            const url = generateFallbackUrl(provider);
-            inlineStreamIframe.src = url;
-            const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
-            inlineVideoTitle.textContent = `${title} - Playing from ${inlineProviderSelect.options[inlineProviderSelect.selectedIndex].text}`;
-        }
         // Fetch hero movies for slideshow
         async function fetchHeroMovies() {
             try {
