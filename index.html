@@ -1633,6 +1633,7 @@
 
         // Fallback URL generation (in case worker.js fails)
         function generateFallbackUrl(provider) {
+            console.log(`Generating fallback URL for provider: ${provider} in ${currentMode} mode`);
             if (currentMode === 'movie') {
                 switch (provider) {
                     case '111movies': return `https://111movies.com/movie/${currentItem.id}`;
@@ -1981,25 +1982,18 @@
                     </select>
                     <select id="streamingProviderSelect" style="background: var(--dark); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; min-width: 150px;">
                         <option value="alpha">Alpha</option>
-                        <option value="bravo">Bravo</option>
                         <option value="charlie">Charlie</option>
                         <option value="delta">Delta</option>
                         <option value="echo">Echo</option>
-                        <option value="foxtrot">Foxtrot</option>
                         <option value="golf">Golf</option>
                         <option value="hotel">Hotel</option>
                         <option value="india">India</option>
                         <option value="juliet">Juliet</option>
-                        <option value="kilo">Kilo</option>
                         <option value="lima">Lima</option>
                         <option value="mike">Mike</option>
                         <option value="november">November</option>
                         <option value="oscar">Oscar</option>
                         <option value="papa">Papa</option>
-                        <option value="quebec">Quebec</option>
-                        <option value="romeo">Romeo</option>
-                        <option value="sierra">Sierra</option>
-                        <option value="tango">Tango</option>
                         <option value="uniform">Uniform</option>
                         <option value="victor">Victor</option>
                         <option value="whiskey">Whiskey</option>
@@ -2007,7 +2001,6 @@
                         <option value="yankee">Yankee</option>
                         <option value="zulu">Zulu</option>
                         <option value="extra1">Extra 1</option>
-                        <option value="extra2">Extra 2</option>
                         <option value="extra3">Extra 3</option>
                         <option value="extra4">Extra 4</option>
                         <option value="extra5">Extra 5</option>
@@ -2088,54 +2081,115 @@
 
                 if (data.url) {
                     iframe.src = data.url;
+                    console.log(`Loading video from provider: ${selectedProvider} -> ${data.url}`);
                 } else {
                     // Fallback if worker fails
-                    iframe.src = generateFallbackUrl(selectedProvider);
+                    const fallbackUrl = generateFallbackUrl(selectedProvider);
+                    iframe.src = fallbackUrl;
+                    console.log(`Fallback URL for provider: ${selectedProvider} -> ${fallbackUrl}`);
                 }
             } catch (error) {
                 console.error('Error getting provider URL:', error);
                 // Fallback to local URL generation
-                iframe.src = generateFallbackUrl(selectedProvider);
+                const fallbackUrl = generateFallbackUrl(selectedProvider);
+                iframe.src = fallbackUrl;
+                console.log(`Error fallback URL for provider: ${selectedProvider} -> ${fallbackUrl}`);
             }
 
             const title = currentMode === 'movie' ? currentItem.title : currentItem.name;
-            overlay.textContent = title;
+            overlay.textContent = `${title} - ${getProviderDisplayName(selectedProvider)}`;
+        }
+
+        // Get display name for provider
+        function getProviderDisplayName(providerValue) {
+            const providerNames = {
+                'alpha': 'Vidora',
+                'charlie': 'Vidsrcpro',
+                'delta': 'Autoembedpro',
+                'echo': 'Smashystream',
+                'golf': 'Vidplus',
+                'hotel': 'Vidking',
+                'india': 'Xprime',
+                'juliet': 'Vixsrc',
+                'lima': 'Vidzee',
+                'mike': '2embed',
+                'november': 'Moviekex',
+                'oscar': 'Vidpro',
+                'papa': 'Primesrc',
+                'uniform': 'Videasy',
+                'victor': 'Moviemaze',
+                'whiskey': '123moviesfree',
+                'xray': 'Vidsrccc',
+                'yankee': 'Vidrock',
+                'zulu': 'Vidsrc',
+                'extra1': 'Autoembed',
+                'extra3': '111movies',
+                'extra4': 'Vidlink',
+                'extra5': 'Vidsrcto'
+            };
+            return providerNames[providerValue] || 'Unknown Provider';
         }
 
         // Fallback URL generation (in case worker.js fails)
         function generateFallbackUrl(provider) {
+            console.log(`Generating fallback URL for provider: ${provider} in ${currentMode} mode`);
+
+            // Map generic name to actual provider name for fallback
+            const actualProvider = mapGenericToProvider(provider);
+            console.log(`Fallback mapping: ${provider} -> ${actualProvider}`);
+
             if (currentMode === 'movie') {
-                switch (provider) {
-                    case 'alpha': return `https://vidora.su/movie/${currentItem.id}`;
-                    case 'bravo': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
-                    case 'charlie': return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
-                    case 'delta': return `https://autoembed.pro/embed/movie/${currentItem.id}`;
-                    case 'echo': return `https://moviemaze.cc/watch/movie/${currentItem.id}`;
-                    case 'foxtrot': return `https://player.videasy.net/movie/${currentItem.id}`;
-                    case 'golf': return `https://vidfast.pro/movie/${currentItem.id}`;
-                    case 'hotel': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
-                    case 'india': return `https://vidlink.pro/movie/${currentItem.id}`;
-                    case 'juliet': return `https://vidora.su/movie/${currentItem.id}`;
-                    case 'kilo': return `https://player.vidplus.to/embed/movie/${currentItem.id}`;
-                    case 'lima': return `https://vidsrc.to/embed/movie/${currentItem.id}`;
-                    case 'mike': return `https://vixsrc.to/movie/${currentItem.id}/`;
+                switch (actualProvider) {
+                    case 'vidora': return `https://vidora.su/movie/${currentItem.id}`;
+                    case 'vidsrcpro': return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
+                    case 'autoembedpro': return `https://autoembed.pro/embed/movie/${currentItem.id}`;
+                    case 'smashystream': return `https://moviemaze.cc/watch/movie/${currentItem.id}`;
+                    case 'vidplus': return `https://vidfast.pro/movie/${currentItem.id}`;
+                    case 'vidking': return `https://www.vidking.net/embed/movie/${currentItem.id}`;
+                    case 'xprime': return `https://vidlink.pro/movie/${currentItem.id}`;
+                    case 'vixsrc': return `https://vidora.su/movie/${currentItem.id}`;
+                    case 'vidzee': return `https://vidsrc.to/embed/movie/${currentItem.id}`;
+                    case '2embed': return `https://vixsrc.to/movie/${currentItem.id}/`;
+                    case 'moviekex': return `https://moviekex.com/movie/${currentItem.id}`;
+                    case 'vidpro': return `https://vidpro.net/movie/${currentItem.id}`;
+                    case 'primesrc': return `https://primesrc.com/movie/${currentItem.id}`;
+                    case 'videasy': return `https://player.videasy.net/movie/${currentItem.id}`;
+                    case 'moviemaze': return `https://moviemaze.cc/watch/movie/${currentItem.id}`;
+                    case '123moviesfree': return `https://123moviesfree.com/movie/${currentItem.id}`;
+                    case 'vidsrccc': return `https://vidsrccc.com/movie/${currentItem.id}`;
+                    case 'vidrock': return `https://vidrock.net/movie/${currentItem.id}`;
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
+                    case 'autoembed': return `https://autoembed.cc/embed/movie/${currentItem.id}`;
+                    case '111movies': return `https://111movies.com/movie/${currentItem.id}`;
+                    case 'vidlink': return `https://vidlink.pro/movie/${currentItem.id}`;
+                    case 'vidsrcto': return `https://vidsrc.to/embed/movie/${currentItem.id}`;
                     default: return `https://vidsrc.cc/v2/embed/movie/${currentItem.id}`;
                 }
             } else {
-                switch (provider) {
-                    case 'alpha': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'bravo': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'charlie': return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'delta': return `https://autoembed.pro/embed/tv/${currentItem.id}&season=${currentSeason}&episode=${currentEpisode}`;
-                    case 'echo': return `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
-                    case 'foxtrot': return `https://player.videasy.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'golf': return `https://vidfast.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'hotel': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'india': return `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'juliet': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'kilo': return `https://player.vidplus.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'lima': return `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
-                    case 'mike': return `https://vixsrc.to/tv/${currentItem.id}/${currentSeason}/${currentEpisode}/`;
+                switch (actualProvider) {
+                    case 'vidora': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrcpro': return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'autoembedpro': return `https://autoembed.pro/embed/tv/${currentItem.id}&season=${currentSeason}&episode=${currentEpisode}`;
+                    case 'smashystream': return `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
+                    case 'vidplus': return `https://vidfast.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidking': return `https://www.vidking.net/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'xprime': return `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vixsrc': return `https://vidora.su/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidzee': return `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case '2embed': return `https://vixsrc.to/tv/${currentItem.id}/${currentSeason}/${currentEpisode}/`;
+                    case 'moviekex': return `https://moviekex.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidpro': return `https://vidpro.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'primesrc': return `https://primesrc.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'videasy': return `https://player.videasy.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'moviemaze': return `https://moviemaze.cc/watch/tv/${currentItem.id}?ep=${currentEpisode}&season=${currentSeason}`;
+                    case '123moviesfree': return `https://123moviesfree.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrccc': return `https://vidsrccc.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidrock': return `https://vidrock.net/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'autoembed': return `https://autoembed.cc/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case '111movies': return `https://111movies.com/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidlink': return `https://vidlink.pro/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
+                    case 'vidsrcto': return `https://vidsrc.to/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
                     default: return `https://vidsrc.cc/v2/embed/tv/${currentItem.id}/${currentSeason}/${currentEpisode}`;
                 }
             }
