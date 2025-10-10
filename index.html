@@ -37,6 +37,16 @@
             --accent: #ff2e63;
         }
 
+        body[data-theme="light"] {
+            --primary: #008f7a;
+            --secondary: #f0f2f5;
+            --dark: #ffffff;
+            --light: #555555;
+            --text: #212529;
+            --accent: #e52a5a;
+            color-scheme: light;
+        }
+
         body {
             background-color: var(--secondary);
             color: var(--text);
@@ -75,6 +85,24 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.6rem;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .header-btn:hover { background-color: rgba(255,255,255,0.1); }
 
         .search-container {
             display: flex;
@@ -203,6 +231,80 @@
         .section-title i {
             color: var(--primary);
         }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .section-header .section-title {
+            margin: 0;
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-clear:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Settings Modal */
+        .settings-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .settings-section h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .theme-switch input { display: none; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
         .content-section {
             margin-bottom: 2rem;
@@ -1302,11 +1404,14 @@
             <div class="logo">
                 <h1><i class="fas fa-play-circle" aria-hidden="true"></i> StreamFlix</h1>
             </div>
-            <div class="search-container">
-                <label for="searchInput" class="visually-hidden">Search movies and TV shows</label>
-                <input type="text" class="search-box" id="searchInput" placeholder="Search movies and TV shows...">
-                <button class="search-btn" id="searchBtn"><i class="fas fa-search" aria-hidden="true"></i> Search</button>
-                <div id="searchSuggestions" class="search-suggestions"></div>
+            <div class="nav-actions">
+                <div class="search-container">
+                    <label for="searchInput" class="visually-hidden">Search movies and TV shows</label>
+                    <input type="text" class="search-box" id="searchInput" placeholder="Search movies and TV shows...">
+                    <button class="search-btn" id="searchBtn"><i class="fas fa-search" aria-hidden="true"></i> Search</button>
+                    <div id="searchSuggestions" class="search-suggestions"></div>
+                </div>
+                <button id="settingsBtn" class="header-btn" aria-label="Open settings"><i class="fas fa-cog"></i></button>
             </div>
         </nav>
     </header>
@@ -1358,7 +1463,9 @@
 
         <!-- Continue Watching Section -->
         <section id="continueWatchingSection" class="content-section" style="display: none;">
-            <h2 class="section-title"><i class="fas fa-history" aria-hidden="true"></i> Continue Watching</h2>
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-history" aria-hidden="true"></i> Continue Watching</h2>
+            </div>
             <div class="content-grid" id="continueWatchingGrid">
                 <!-- History items will be loaded here -->
             </div>
@@ -1366,7 +1473,9 @@
 
         <!-- Favorites Section -->
         <section id="favoritesSection" class="content-section" style="display: none;">
-            <h2 class="section-title"><i class="fas fa-heart" aria-hidden="true"></i> My Favorites</h2>
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-heart" aria-hidden="true"></i> My Favorites</h2>
+            </div>
             <div class="content-grid" id="favoritesGrid">
                 <!-- Favorite items will be loaded here -->
             </div>
@@ -1385,6 +1494,30 @@
         <button class="btn btn-secondary" id="loadMore" style="display: none; margin: 0 auto;">Load More</button>
     </div>
     </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About StreamFlix</h3>
+                <p>StreamFlix is a demonstration project showcasing modern web technologies for building a movie and TV show streaming guide. All content is provided by third-party services.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Legal Disclaimer</h3>
+                <p>This site does not store any files on our server. All contents are provided by non-affiliated third parties. We are not responsible for the legality of the content. Please respect the copyright laws in your country.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            &copy; 2024 StreamFlix. All Rights Reserved. This site is for educational purposes only.
+        </div>
+    </footer>
 
     <!-- Detail Modal -->
     <div class="modal" id="detailModal" role="dialog" aria-modal="true">
@@ -1418,6 +1551,7 @@
                         <div class="action-buttons">
                             <button class="watch-btn" id="watchBtn"><i class="fas fa-play" aria-hidden="true"></i> Watch Now</button>
                             <button class="btn btn-secondary favorite-btn" id="favoriteBtn"><i class="fas fa-heart"></i> Add to Favorites</button>
+                            <button class="btn btn-secondary share-btn" id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
                         </div>
                     </div>
                     <!-- Season/Episode Selector for TV Shows -->
@@ -1434,6 +1568,39 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="close-modal" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body" style="flex-direction: column;">
+                <div class="settings-section">
+                    <h4>Appearance</h4>
+                    <div class="setting-item">
+                        <span>Dark Mode</span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="themeSwitch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h4>Data Management</h4>
+                    <div class="setting-item">
+                        <span>Clear Watch History</span>
+                        <button id="clearHistoryBtn" class="btn-clear">Clear</button>
+                    </div>
+                    <div class="setting-item">
+                        <span>Clear Favorites</span>
+                        <button id="clearFavoritesBtn" class="btn-clear">Clear</button>
                     </div>
                 </div>
             </div>
@@ -1485,8 +1652,15 @@
         const castGrid = document.getElementById('castGrid');
         const watchBtn = document.getElementById('watchBtn');
         const favoriteBtn = document.getElementById('favoriteBtn');
+        const shareBtn = document.getElementById('shareBtn');
         const startWatchingBtn = document.getElementById('startWatchingBtn');
         const moreInfoBtn = document.getElementById('moreInfoBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+
+        // Settings Modal Elements
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsModal = document.getElementById('closeSettingsModal');
+        const themeSwitch = document.getElementById('themeSwitch');
 
         // Search suggestions
         function handleSearchInput() {
@@ -1550,9 +1724,22 @@
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
-            fetchContent();
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareId = urlParams.get('id');
+            const shareMode = urlParams.get('mode');
+
+            if (shareId && shareMode) {
+                // If a shared link is opened, show the specific item
+                currentMode = shareMode;
+                showDetails(shareId);
+            } else {
+                // Otherwise, load the default content
+                fetchContent();
+            }
+
             setupEventListeners();
             fetchHeroMovies();
+            applyInitialTheme();
             displayFavorites();
             displayWatchHistory();
 
@@ -1589,6 +1776,18 @@
                 btn.addEventListener('click', () => switchGenre(btn.dataset.genre));
             });
 
+            // Settings Modal
+            settingsBtn.addEventListener('click', openSettingsModal);
+            closeSettingsModal.addEventListener('click', () => settingsModal.style.display = 'none');
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+
+            // Theme switch inside settings
+            themeSwitch.addEventListener('change', toggleTheme);
+
             loadMoreBtn.addEventListener('click', loadMore);
             closeModal.addEventListener('click', () => detailModal.style.display = 'none');
 
@@ -1604,9 +1803,26 @@
                 openPlayerInNewTab();
             });
 
+            // Clear History button (inside settings)
+            document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+                clearWatchHistory();
+                alert('Watch history cleared.');
+            });
+
+            // Clear Favorites button (inside settings)
+            document.getElementById('clearFavoritesBtn').addEventListener('click', () => {
+                clearFavorites();
+                alert('Favorites cleared.');
+            });
+
             // Favorite button in modal
             favoriteBtn.addEventListener('click', () => {
                 toggleFavorite();
+            });
+
+            // Share button in modal
+            shareBtn.addEventListener('click', () => {
+                handleShare();
             });
 
             // Season/Episode selection change
@@ -1637,6 +1853,27 @@
                 }
             });
 
+        }
+
+        // --- Theme Functions ---
+
+        function applyInitialTheme() {
+            const savedTheme = localStorage.getItem('streamflixTheme') || 'dark'; // Default to dark
+            document.body.setAttribute('data-theme', savedTheme);
+            themeSwitch.checked = savedTheme === 'dark';
+        }
+
+        function toggleTheme() {
+            const newTheme = themeSwitch.checked ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('streamflixTheme', newTheme);
+        }
+
+        function openSettingsModal() {
+            // Ensure the theme switch is in the correct state when opening
+            const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+            themeSwitch.checked = currentTheme === 'dark';
+            settingsModal.style.display = 'block';
         }
 
         // --- Watch History Functions ---
@@ -1678,11 +1915,23 @@
             displayWatchHistory(); // Refresh the display
         }
 
+        function clearWatchHistory() {
+            localStorage.removeItem('streamflixWatchHistory');
+            document.getElementById('continueWatchingSection').style.display = 'none';
+            document.getElementById('continueWatchingGrid').innerHTML = '';
+        }
+
         // --- Favorites Functions ---
 
         function getFavorites() {
             const favorites = localStorage.getItem('streamflixFavorites');
             return favorites ? JSON.parse(favorites) : [];
+        }
+
+        function clearFavorites() {
+            localStorage.removeItem('streamflixFavorites');
+            document.getElementById('favoritesSection').style.display = 'none';
+            document.getElementById('favoritesGrid').innerHTML = '';
         }
 
         function isFavorite(itemId) {
