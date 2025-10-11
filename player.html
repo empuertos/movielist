@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Player</title>
+
+    <!-- Prevent caching and inspection -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- Security headers for mobile -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="no-referrer-when-downgrade">
+
+    <!-- Prevent mobile sniffers -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache">
+
+    <!-- Disable mobile browser features that could expose URLs -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <style>
         * {
             margin: 0;
@@ -111,6 +131,55 @@
             background: #ff5252;
             transform: translateY(-2px);
         }
+
+        .dev-tools-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .warning-content {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .warning-content h2 {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .warning-content p {
+            color: #ffcccc;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sniffer-warning, .extension-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
@@ -125,12 +194,24 @@
         <button id="retryBtn" class="retry-btn">Retry</button>
     </div>
 
+    <!-- Developer Tools Warning Overlay -->
+    <div id="devToolsWarning" class="dev-tools-warning" style="display: none;">
+        <div class="warning-content">
+            <h2>⚠️ Developer Tools Detected!</h2>
+            <p>Please close developer tools to continue watching.</p>
+            <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
+                Refresh the page after closing developer tools.
+            </p>
+            <button onclick="location.reload()" class="retry-btn">Refresh Page</button>
+        </div>
+    </div>
+
     <div id="playerContainer" class="player-container" style="display: none;">
         <div class="controls">
             <span id="movieTitle">Loading...</span>
             <div id="providerButtons"></div>
         </div>
-        <iframe id="moviePlayer" allowfullscreen allow="autoplay"></iframe>
+        <iframe id="moviePlayer" allowfullscreen allow="autoplay" style="border: none; width: 100%; height: 100%; visibility: hidden;"></iframe>
     </div>
 
     <script>
@@ -205,25 +286,64 @@
                 errorDiv.style.display = 'none';
                 playerContainer.style.display = 'none';
 
+                // Fetch movie/TV show details to get the title
+                await fetchMovieDetails();
+
                 const streamUrl = generateStreamUrl(provider, movieId, mode, season, episode);
 
-                // Set iframe src after a short delay to ensure it loads properly
+                // Set iframe src dynamically to hide from inspect element
                 setTimeout(() => {
-                    moviePlayer.src = streamUrl;
+                    // Use a more obfuscated approach to set the src
+                    moviePlayer.contentWindow.location.replace(streamUrl);
+                    moviePlayer.style.visibility = 'visible'; // Make iframe visible
                     loadingDiv.style.display = 'none';
                     playerContainer.style.display = 'block';
-
-                    // Update movie title if available
-                    if (mode === 'movie') {
-                        movieTitle.textContent = `Movie ID: ${movieId}`;
-                    } else {
-                        movieTitle.textContent = `TV Show ID: ${movieId} - S${season}E${episode}`;
-                    }
                 }, 1000);
 
             } catch (error) {
                 console.error('Error loading movie:', error);
                 showError();
+            }
+        }
+
+        async function fetchMovieDetails() {
+            try {
+                // Use the same API endpoint as the main app
+                const apiUrl = window.location.origin;
+                const endpoint = mode === 'movie'
+                    ? `${apiUrl}/${mode}/${movieId}`
+                    : `${apiUrl}/${mode}/${movieId}`;
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const title = mode === 'movie' ? data.title : data.name;
+                    const year = mode === 'movie'
+                        ? (data.release_date ? data.release_date.substring(0, 4) : '')
+                        : (data.first_air_date ? data.first_air_date.substring(0, 4) : '');
+
+                    if (mode === 'movie') {
+                        movieTitle.textContent = `${title}${year ? ` (${year})` : ''}`;
+                    } else {
+                        movieTitle.textContent = `${title}${year ? ` (${year})` : ''} - S${season}E${episode}`;
+                    }
+                } else {
+                    // Fallback to ID if API fails
+                    if (mode === 'movie') {
+                        movieTitle.textContent = `Movie: ${movieId}`;
+                    } else {
+                        movieTitle.textContent = `TV Show: ${movieId} - S${season}E${episode}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching movie details:', error);
+                // Fallback to ID if API fails
+                if (mode === 'movie') {
+                    movieTitle.textContent = `Movie: ${movieId}`;
+                } else {
+                    movieTitle.textContent = `TV Show: ${movieId} - S${season}E${episode}`;
+                }
             }
         }
 
@@ -260,6 +380,505 @@
         moviePlayer.addEventListener('error', () => {
             showError();
         });
+
+        // Additional obfuscation to prevent easy URL detection
+        function obfuscatePlayer() {
+            // Disable right-click context menu on iframe
+            moviePlayer.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+
+            // Prevent iframe inspection by overriding getComputedStyle
+            const originalGetComputedStyle = window.getComputedStyle;
+            window.getComputedStyle = function(element) {
+                if (element === moviePlayer) {
+                    const style = originalGetComputedStyle.apply(this, arguments);
+                    // Hide any URL-related properties
+                    const obfuscatedStyle = {};
+                    for (let prop in style) {
+                        if (typeof style[prop] === 'string' && style[prop].includes('http')) {
+                            obfuscatedStyle[prop] = 'none';
+                        } else {
+                            obfuscatedStyle[prop] = style[prop];
+                        }
+                    }
+                    return obfuscatedStyle;
+                }
+                return originalGetComputedStyle.apply(this, arguments);
+            };
+
+            // Override console methods to prevent URL logging
+            const originalConsole = window.console;
+            window.console = {
+                ...originalConsole,
+                log: function(...args) {
+                    const filteredArgs = args.filter(arg =>
+                        typeof arg !== 'string' || !arg.includes('autoembed.pro')
+                    );
+                    if (filteredArgs.length > 0) {
+                        originalConsole.log.apply(this, filteredArgs);
+                    }
+                }
+            };
+        }
+
+        // Initialize obfuscation after player loads
+        setTimeout(obfuscatePlayer, 2000);
+
+        // Disable developer tools and right-click
+        function disableDevTools() {
+            // Disable right-click context menu
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable text selection
+            document.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable copy functionality
+            document.addEventListener('copy', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable cut functionality
+            document.addEventListener('cut', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable paste functionality
+            document.addEventListener('paste', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable F12 (Developer Tools)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+Shift+I (Inspect Element)
+                if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+Shift+C (Inspect Element alternative)
+                if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+U (View Page Source)
+                if (e.ctrlKey && e.key === 'u') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+Shift+J (Console)
+                if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+Shift+K (Console alternative)
+                if (e.ctrlKey && e.shiftKey && e.key === 'K') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+A (Select All)
+                if (e.ctrlKey && e.key === 'a') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+S (Save Page)
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable Ctrl+P (Print)
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // Disable drag and drop
+            document.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            document.addEventListener('drop', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Override console methods to prevent access
+            let devtools = {open: false};
+            let threshold = 160;
+
+            setInterval(() => {
+                if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
+                    if (!devtools.open) {
+                        devtools.open = true;
+                        showDevToolsWarning();
+                    }
+                } else {
+                    if (devtools.open) {
+                        devtools.open = false;
+                        hideDevToolsWarning();
+                    }
+                }
+            }, 1000);
+
+            // Disable window resize to prevent dev tools detection bypass
+            window.addEventListener('resize', function() {
+                if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
+                    showDevToolsWarning();
+                }
+            });
+
+            function showDevToolsWarning() {
+                document.getElementById('devToolsWarning').style.display = 'flex';
+                // Pause video if playing
+                if (moviePlayer && moviePlayer.contentWindow) {
+                    try {
+                        moviePlayer.contentWindow.postMessage('pause', '*');
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }
+            }
+
+            function hideDevToolsWarning() {
+                document.getElementById('devToolsWarning').style.display = 'none';
+                // Resume video if needed
+                if (moviePlayer && moviePlayer.contentWindow) {
+                    try {
+                        moviePlayer.contentWindow.postMessage('play', '*');
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }
+            }
+        }
+
+        // Initialize all protections
+        setTimeout(disableDevTools, 1000);
+
+        // Mobile HTTP sniffer detection and blocking
+        function detectMobileSniffers() {
+            // Detect common proxy/sniffer apps by checking for suspicious patterns
+            const userAgent = navigator.userAgent.toLowerCase();
+            const suspiciousApps = [
+                'charles', 'fiddler', 'burp', 'mitmproxy', 'wireshark',
+                'httpcanary', 'packetcapture', 'proxifier', 'postern',
+                'shadowrocket', 'quantumult', 'surge', 'loon',
+                'http injector', 'kpn tunnel', 'psiphon', 'orbot',
+                'netguard', 'adguard', 'dns66', 'blokada'
+            ];
+
+            for (let app of suspiciousApps) {
+                if (userAgent.includes(app)) {
+                    showSnifferWarning(app);
+                    return true;
+                }
+            }
+
+            // Check for VPN/proxy indicators
+            if (window.location.hostname !== 'streamflix.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev') {
+                showSnifferWarning('proxy/vpn');
+                return true;
+            }
+
+            // Check for certificate pinning bypass attempts
+            if (window.location.protocol !== 'https:') {
+                showSnifferWarning('insecure connection');
+                return true;
+            }
+
+            // Monitor network requests for interception attempts
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                // Log suspicious fetch attempts (for debugging)
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('autoembed.pro')) {
+                    console.warn('Network request intercepted:', args[0]);
+                }
+                return originalFetch.apply(this, args);
+            };
+
+            // Monitor XMLHttpRequest
+            const originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if (url && url.includes('autoembed.pro')) {
+                    console.warn('XHR request intercepted:', url);
+                }
+                return originalOpen.apply(this, arguments);
+            };
+
+            return false;
+        }
+
+        function showSnifferWarning(detectedApp) {
+            // Hide all other content and show warning
+            document.querySelectorAll('div').forEach(div => {
+                if (!div.id || (div.id !== 'snifferWarning' && div.id !== 'devToolsWarning')) {
+                    div.style.display = 'none';
+                }
+            });
+
+            // Create sniffer warning if it doesn't exist
+            if (!document.getElementById('snifferWarning')) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'snifferWarning';
+                warningDiv.className = 'sniffer-warning';
+                warningDiv.innerHTML = `
+                    <div class="warning-content">
+                        <h2>🚫 Network Inspection Detected!</h2>
+                        <p>HTTP sniffer or proxy app detected: <strong>${detectedApp}</strong></p>
+                        <p>Please disable network inspection tools to continue watching.</p>
+                        <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
+                            Close ${detectedApp} and refresh the page.
+                        </p>
+                        <button onclick="location.reload()" class="retry-btn">Refresh Page</button>
+                    </div>
+                `;
+                document.body.appendChild(warningDiv);
+            }
+
+            document.getElementById('snifferWarning').style.display = 'flex';
+        }
+
+        // Initialize mobile sniffer detection
+        setTimeout(detectMobileSniffers, 1500);
+
+        // Periodic check for mobile sniffers
+        setInterval(detectMobileSniffers, 5000);
+
+        // Browser extension detection and blocking (Mobile-focused)
+        function detectBrowserExtensions() {
+            let extensionDetected = false;
+            let extensionName = '';
+
+            // Mobile browser detection
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent);
+            const isKiwi = /kiwi|chrome.*mobile/i.test(userAgent);
+            const isSamsung = /samsungbrowser/i.test(userAgent);
+            const isFirefoxMobile = /firefox.*mobile/i.test(userAgent);
+
+            // Mobile-specific extension patterns
+            const mobileExtensionPatterns = [
+                // Mobile video downloaders
+                { name: 'Mobile Video Downloader', patterns: ['mobile.*video.*download', 'android.*download', 'ios.*recorder'] },
+                { name: 'Screen Recorder Mobile', patterns: ['screen.*recorder.*mobile', 'mobile.*capture', 'android.*recorder'] },
+
+                // Mobile browser extensions
+                { name: 'Kiwi Browser Extensions', patterns: ['kiwi.*extension', 'kiwi.*addon'] },
+                { name: 'Firefox Mobile Addons', patterns: ['firefox.*mobile.*addon', 'firefox.*extension'] },
+                { name: 'Samsung Internet Extensions', patterns: ['samsung.*extension', 'samsung.*addon'] },
+
+                // Mobile developer tools
+                { name: 'Mobile DevTools', patterns: ['mobile.*devtools', 'android.*debug', 'ios.*debug'] },
+                { name: 'WebView Inspector', patterns: ['webview.*inspector', 'mobile.*inspector'] },
+
+                // Mobile proxy/VPN extensions
+                { name: 'Mobile VPN Extension', patterns: ['mobile.*vpn', 'android.*proxy', 'ios.*proxy'] },
+                { name: 'Mobile Proxy Switch', patterns: ['mobile.*proxy.*switch', 'android.*proxy'] },
+
+                // PWA debugging extensions
+                { name: 'PWA Inspector', patterns: ['pwa.*inspector', 'progressive.*web.*app.*debug'] },
+                { name: 'Mobile PWA Tools', patterns: ['mobile.*pwa.*debug', 'pwa.*extension'] },
+
+                // Common mobile extension signatures
+                { name: 'Mobile Extension', patterns: ['mobile.*extension', 'android.*extension', 'ios.*extension'] },
+                { name: 'Browser Extension Mobile', patterns: ['browser.*extension.*mobile', 'mobile.*browser.*addon'] }
+            ];
+
+            // Check for mobile-specific user agents with extensions
+            if (isMobile) {
+                if (isKiwi) {
+                    extensionDetected = true;
+                    extensionName = 'Kiwi Browser Extensions';
+                } else if (isSamsung) {
+                    extensionDetected = true;
+                    extensionName = 'Samsung Internet Extensions';
+                } else if (isFirefoxMobile) {
+                    extensionDetected = true;
+                    extensionName = 'Firefox Mobile Addons';
+                }
+
+                // Check for mobile WebView debugging
+                if (userAgent.includes('wv') || userAgent.includes('webview')) {
+                    extensionDetected = true;
+                    extensionName = 'WebView Debugging';
+                }
+            }
+
+            // Check window object for mobile extension properties
+            for (let prop in window) {
+                if (prop.includes('kiwi') && prop.includes('extension')) {
+                    extensionDetected = true;
+                    extensionName = 'Kiwi Browser Extension';
+                    break;
+                }
+
+                if (prop.includes('mobile') && (prop.includes('extension') || prop.includes('addon'))) {
+                    extensionDetected = true;
+                    extensionName = 'Mobile Browser Extension';
+                    break;
+                }
+
+                if (prop.includes('pwa') && prop.includes('debug')) {
+                    extensionDetected = true;
+                    extensionName = 'PWA Debugging Extension';
+                    break;
+                }
+            }
+
+            // Check for mobile extension content scripts
+            const mobileScripts = document.querySelectorAll('script');
+            for (let script of mobileScripts) {
+                if (script.src && (script.src.includes('kiwi') || script.src.includes('mobile'))) {
+                    extensionDetected = true;
+                    extensionName = 'Mobile Extension Script';
+                    break;
+                }
+            }
+
+            // Check for mobile debugging indicators
+            if (window.location.href.includes('chrome-extension://') ||
+                window.location.href.includes('moz-extension://') ||
+                window.location.href.includes('samsung-extension://')) {
+                extensionDetected = true;
+                extensionName = 'Mobile Extension Page';
+            }
+
+            // Check for modified mobile APIs
+            if (navigator.geolocation && navigator.geolocation.getCurrentPosition.toString().includes('[native code]') === false) {
+                extensionDetected = true;
+                extensionName = 'Geolocation Modifying Extension';
+            }
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia.toString().includes('[native code]') === false) {
+                extensionDetected = true;
+                extensionName = 'Media Modifying Extension';
+            }
+
+            // Check window object for extension properties
+            for (let prop in window) {
+                if (prop.startsWith('__') && prop.endsWith('__')) {
+                    extensionDetected = true;
+                    extensionName = 'Developer Extension';
+                    break;
+                }
+
+                if (prop.includes('devtools') || prop.includes('extension')) {
+                    extensionDetected = true;
+                    extensionName = 'Browser Extension';
+                    break;
+                }
+            }
+
+            // Check for modified APIs that indicate extensions
+            if (window.fetch.toString() !== originalFetch?.toString()) {
+                extensionDetected = true;
+                extensionName = 'API Modifying Extension';
+            }
+
+            if (XMLHttpRequest.prototype.open.toString() !== originalOpen?.toString()) {
+                extensionDetected = true;
+                extensionName = 'XHR Modifying Extension';
+            }
+
+            // Check for extension content scripts
+            const extensionScripts = document.querySelectorAll('script');
+            for (let script of extensionScripts) {
+                if (script.src && script.src.includes('extension')) {
+                    extensionDetected = true;
+                    extensionName = 'Content Script Extension';
+                    break;
+                }
+            }
+
+            // Check for extension background page modifications
+            if (window.chrome && window.chrome.extension) {
+                extensionDetected = true;
+                extensionName = 'Chrome Extension';
+            }
+
+            // Check for Firefox extension APIs
+            if (window.browser && window.browser.extension) {
+                extensionDetected = true;
+                extensionName = 'Firefox Extension';
+            }
+
+            // Check for modified console object
+            if (window.console.log.toString() !== originalConsole?.log?.toString()) {
+                extensionDetected = true;
+                extensionName = 'Console Modifying Extension';
+            }
+
+            if (extensionDetected) {
+                showExtensionWarning(extensionName);
+                return true;
+            }
+
+            return false;
+        }
+
+        function showExtensionWarning(extensionName) {
+            // Hide all other content and show warning
+            document.querySelectorAll('div').forEach(div => {
+                if (!div.id || !['extensionWarning', 'snifferWarning', 'devToolsWarning'].includes(div.id)) {
+                    div.style.display = 'none';
+                }
+            });
+
+            // Create extension warning if it doesn't exist
+            if (!document.getElementById('extensionWarning')) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'extensionWarning';
+                warningDiv.className = 'extension-warning';
+                warningDiv.innerHTML = `
+                    <div class="warning-content">
+                        <h2>🔌 Browser Extension Detected!</h2>
+                        <p>Extension detected: <strong>${extensionName}</strong></p>
+                        <p>Please disable browser extensions to continue watching.</p>
+                        <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
+                            Go to browser settings and disable extensions, then refresh.
+                        </p>
+                        <button onclick="location.reload()" class="retry-btn">Refresh Page</button>
+                    </div>
+                `;
+                document.body.appendChild(warningDiv);
+            }
+
+            document.getElementById('extensionWarning').style.display = 'flex';
+        }
+
+        // Store original API references for comparison
+        const originalFetch = window.fetch;
+        const originalOpen = XMLHttpRequest.prototype.open;
+        const originalConsole = window.console;
+
+        // Initialize extension detection
+        setTimeout(detectBrowserExtensions, 2000);
+
+        // Periodic check for browser extensions
+        setInterval(detectBrowserExtensions, 8000);
     </script>
 </body>
 </html>
