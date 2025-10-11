@@ -290,6 +290,38 @@
             background: #00FF9D;
             border-radius: 10px;
         }
+
+        /* Hide common ad elements */
+        .ad-banner,
+        .popup-ad,
+        .advertisement,
+        #ad-container,
+        [class*="ad-"],
+        [id*="ad-"],
+        [class*="popup"],
+        [id*="popup"],
+        .overlay-ad,
+        .video-overlay,
+        iframe[src*="ads"],
+        div[style*="position: fixed"][style*="z-index: 999"],
+        div[style*="position: absolute"][style*="top: 0"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Block ad overlays */
+        body.ad-overlay-active::before {
+            display: none !important;
+        }
+
+        /* Hide floating ads */
+        .floating-ad,
+        .sticky-ad,
+        .bottom-ad,
+        .top-ad {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -618,7 +650,7 @@
         // Check iframe health periodically
         setInterval(checkIframeHealth, 5000);
 
-        // Basic security without interfering with loading
+        // Basic security and ad blocking
         function basicSecurity() {
             // Disable right-click context menu on iframe only
             moviePlayer.addEventListener('contextmenu', (e) => {
@@ -627,8 +659,148 @@
             });
         }
 
-        // Initialize basic security after player loads
-        setTimeout(basicSecurity, 2000);
+        // Ad blocking and popup prevention
+        function blockAdsAndPopups() {
+            // Block window.open to prevent popup ads
+            const originalWindowOpen = window.open;
+            window.open = function(url, name, specs) {
+                // Allow legitimate popups (small windows for player controls)
+                if (name && (name.includes('player') || name.includes('video') || name === '_blank')) {
+                    return originalWindowOpen.apply(this, arguments);
+                }
+
+                // Block suspicious popups
+                if (url && (url.includes('ads') || url.includes('popup') || url.includes('click'))) {
+                    console.log('Blocked popup:', url);
+                    return null;
+                }
+
+                // Block popups without URL (common ad technique)
+                if (!url || url === 'about:blank') {
+                    console.log('Blocked blank popup');
+                    return null;
+                }
+
+                return originalWindowOpen.apply(this, arguments);
+            };
+
+            // Monitor for ad overlays and remove them
+            function removeAdOverlays() {
+                // Common ad overlay selectors
+                const adSelectors = [
+                    '[class*="ad"]',
+                    '[id*="ad"]',
+                    '[class*="popup"]',
+                    '[id*="popup"]',
+                    '[class*="overlay"]',
+                    '[id*="overlay"]',
+                    '.ad-banner',
+                    '.popup-ad',
+                    '#ad-container',
+                    '.advertisement',
+                    '[data-ad]',
+                    'iframe[src*="ads"]',
+                    'div[style*="position: fixed"][style*="z-index: 999"]',
+                    'div[style*="position: absolute"][style*="top: 0"]'
+                ];
+
+                adSelectors.forEach(selector => {
+                    const ads = document.querySelectorAll(selector);
+                    ads.forEach(ad => {
+                        if (ad && ad.parentNode) {
+                            console.log('Removed ad element:', selector);
+                            ad.remove();
+                        }
+                    });
+                });
+            }
+
+            // Use MutationObserver to detect and remove new ad elements
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            // Check if the new element looks like an ad
+                            const element = node;
+                            const className = element.className || '';
+                            const id = element.id || '';
+                            const style = element.getAttribute('style') || '';
+
+                            if (
+                                className.toLowerCase().includes('ad') ||
+                                id.toLowerCase().includes('ad') ||
+                                className.toLowerCase().includes('popup') ||
+                                id.toLowerCase().includes('popup') ||
+                                style.includes('position: fixed') && style.includes('z-index')
+                            ) {
+                                console.log('Removed dynamic ad element');
+                                element.remove();
+                            }
+                        }
+                    });
+                });
+            });
+
+            // Start observing DOM changes
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            // Periodic ad cleanup
+            setInterval(removeAdOverlays, 2000);
+
+            // Block common ad scripts
+            const originalCreateElement = document.createElement;
+            document.createElement = function(tagName, options) {
+                const element = originalCreateElement.call(this, tagName, options);
+
+                // Monitor script creation for ad scripts
+                if (tagName.toLowerCase() === 'script') {
+                    const originalSrc = element.src;
+                    Object.defineProperty(element, 'src', {
+                        set: function(value) {
+                            if (value && (value.includes('ads') || value.includes('analytics') || value.includes('tracker'))) {
+                                console.log('Blocked ad script:', value);
+                                return; // Block the script
+                            }
+                            originalSrc = value;
+                        },
+                        get: function() {
+                            return originalSrc;
+                        }
+                    });
+                }
+
+                return element;
+            };
+
+            // Override alert and confirm to block ad dialogs
+            const originalAlert = window.alert;
+            const originalConfirm = window.confirm;
+
+            window.alert = function(message) {
+                if (message && (message.toLowerCase().includes('ad') || message.toLowerCase().includes('subscription'))) {
+                    console.log('Blocked ad alert:', message);
+                    return;
+                }
+                return originalAlert.apply(this, arguments);
+            };
+
+            window.confirm = function(message) {
+                if (message && (message.toLowerCase().includes('ad') || message.toLowerCase().includes('subscription'))) {
+                    console.log('Blocked ad confirm:', message);
+                    return false; // Block the dialog
+                }
+                return originalConfirm.apply(this, arguments);
+            };
+        }
+
+        // Initialize security and ad blocking after player loads
+        setTimeout(() => {
+            basicSecurity();
+            blockAdsAndPopups();
+        }, 2000);
 
         // Disable developer tools and right-click
         function disableDevTools() {
