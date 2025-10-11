@@ -489,18 +489,35 @@
     <script>
         // Domain validation - protect against direct access
         (function() {
-          // ⚙️ CONFIGURATION: Your allowed domains
+          // ⚙️ CONFIGURATION: Your EXACT allowed domains
           const allowedDomains = [
-            'localhost',
-            '127.0.0.1',
-            'streamflix-use.vercel.app',    // Vercel deployment
-            'empuertos.github.io',         // GitHub Pages
-            'vercel.app',                  // Vercel domain suffix
-            'github.io'                    // GitHub Pages domain suffix
+            'streamflix-use.vercel.app',    // Your Vercel deployment
+            'empuertos.github.io'          // Your GitHub Pages
+          ];
+
+          // Additional allowed patterns
+          const allowedPatterns = [
+            /^localhost$/,
+            /^127\.0\.0\.1$/,
+            /^.*\.vercel\.app$/,           // Any Vercel subdomain
+            /^.*\.github\.io$/            // Any GitHub Pages
           ];
 
           const currentDomain = window.location.hostname.toLowerCase();
-          const isAllowed = allowedDomains.some(domain => currentDomain === domain || currentDomain.endsWith('.' + domain));
+
+          // Check exact domain match
+          let isAllowed = allowedDomains.includes(currentDomain);
+
+          // Check pattern match
+          if (!isAllowed) {
+            isAllowed = allowedPatterns.some(pattern => pattern.test(currentDomain));
+          }
+
+          console.log('Domain validation check:', {
+            currentDomain,
+            allowedDomains,
+            isAllowed
+          });
 
           if (!isAllowed) {
             document.body.innerHTML = `
