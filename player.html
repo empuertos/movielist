@@ -180,6 +180,89 @@
             z-index: 9999;
             backdrop-filter: blur(5px);
         }
+
+        .instructions {
+            margin: 1rem 0;
+            text-align: left;
+        }
+
+        .instructions h3 {
+            color: #fff;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .instructions h4 {
+            color: #00FF9D;
+            margin: 1.5rem 0 1rem 0;
+            font-size: 1.1rem;
+        }
+
+        .instructions h5 {
+            color: #ccc;
+            margin: 1rem 0 0.5rem 0;
+            font-size: 1rem;
+        }
+
+        .browser-guide {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            border-left: 3px solid #00FF9D;
+        }
+
+        .browser-guide ol {
+            margin-left: 1rem;
+        }
+
+        .browser-guide li {
+            margin: 0.3rem 0;
+            color: #ddd;
+            line-height: 1.4;
+        }
+
+        .troubleshooting {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 0, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #ffeb3b;
+        }
+
+        .troubleshooting h5 {
+            color: #ffeb3b;
+            margin-bottom: 0.5rem;
+        }
+
+        .troubleshooting ul {
+            margin-left: 1rem;
+        }
+
+        .troubleshooting li {
+            margin: 0.3rem 0;
+            color: #ddd;
+        }
+
+        .warning-content {
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+
+        .warning-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .warning-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .warning-content::-webkit-scrollbar-thumb {
+            background: #00FF9D;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -847,26 +930,158 @@
                 }
             });
 
+            // Detect mobile vs desktop
+            const isMobile = /android|iphone|ipad|ipod|blackberry|windows phone/i.test(navigator.userAgent.toLowerCase());
+
             // Create extension warning if it doesn't exist
             if (!document.getElementById('extensionWarning')) {
                 const warningDiv = document.createElement('div');
                 warningDiv.id = 'extensionWarning';
                 warningDiv.className = 'extension-warning';
+
+                const instructions = isMobile ?
+                    getMobileExtensionInstructions(extensionName) :
+                    getDesktopExtensionInstructions(extensionName);
+
                 warningDiv.innerHTML = `
                     <div class="warning-content">
                         <h2>🔌 Browser Extension Detected!</h2>
                         <p>Extension detected: <strong>${extensionName}</strong></p>
-                        <p>Please disable browser extensions to continue watching.</p>
-                        <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
-                            Go to browser settings and disable extensions, then refresh.
-                        </p>
-                        <button onclick="location.reload()" class="retry-btn">Refresh Page</button>
+                        <div class="instructions">
+                            <h3>How to Disable Extensions:</h3>
+                            ${instructions}
+                        </div>
+                        <button onclick="location.reload()" class="retry-btn">I've Disabled Extensions - Refresh Page</button>
                     </div>
                 `;
                 document.body.appendChild(warningDiv);
             }
 
             document.getElementById('extensionWarning').style.display = 'flex';
+        }
+
+        function getDesktopExtensionInstructions(extensionName) {
+            return `
+                <div class="desktop-instructions">
+                    <h4>🖥️ Desktop Browser Instructions:</h4>
+
+                    <div class="browser-guide">
+                        <h5>🔍 Google Chrome:</h5>
+                        <ol>
+                            <li>Click the three dots (⋮) in the top-right corner</li>
+                            <li>Select "More tools" → "Extensions"</li>
+                            <li>Find <strong>${extensionName}</strong> and toggle it off</li>
+                            <li>Or click "Remove" to uninstall completely</li>
+                            <li>Close and reopen all Chrome windows</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>🦊 Firefox:</h5>
+                        <ol>
+                            <li>Click the menu button (☰) in the top-right</li>
+                            <li>Select "Add-ons and themes"</li>
+                            <li>Click "Extensions" in the left sidebar</li>
+                            <li>Find <strong>${extensionName}</strong> and click the toggle to disable</li>
+                            <li>Restart Firefox completely</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>🌐 Microsoft Edge:</h5>
+                        <ol>
+                            <li>Click the three dots (⋯) in the top-right</li>
+                            <li>Select "Extensions"</li>
+                            <li>Find <strong>${extensionName}</strong> and toggle it off</li>
+                            <li>Click "Remove" if you want to uninstall</li>
+                            <li>Restart Edge</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>🍎 Safari (Mac):</h5>
+                        <ol>
+                            <li>Go to Safari → Preferences → Extensions</li>
+                            <li>Select <strong>${extensionName}</strong> from the list</li>
+                            <li>Uncheck the "Enable" checkbox</li>
+                            <li>Or click "Uninstall" to remove completely</li>
+                            <li>Restart Safari</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getMobileExtensionInstructions(extensionName) {
+            return `
+                <div class="mobile-instructions">
+                    <h4>📱 Mobile Browser Instructions:</h4>
+
+                    <div class="browser-guide">
+                        <h5>🥝 Kiwi Browser (Android):</h5>
+                        <ol>
+                            <li>Tap the three dots (⋮) in the top-right</li>
+                            <li>Select "Extensions"</li>
+                            <li>Find <strong>${extensionName}</strong> and tap the toggle to disable</li>
+                            <li>Tap "Remove" to uninstall if needed</li>
+                            <li>Close and reopen Kiwi Browser</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>📱 Samsung Internet:</h5>
+                        <ol>
+                            <li>Tap the menu button (⋮) in the bottom-right</li>
+                            <li>Select "Add-ons"</li>
+                            <li>Find <strong>${extensionName}</strong> and toggle it off</li>
+                            <li>Tap "Delete" to remove completely</li>
+                            <li>Restart Samsung Internet</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>🦊 Firefox Mobile (Android):</h5>
+                        <ol>
+                            <li>Tap the menu button (⋰) in the top-right</li>
+                            <li>Select "Add-ons"</li>
+                            <li>Go to "Extensions" tab</li>
+                            <li>Find <strong>${extensionName}</strong> and tap the toggle</li>
+                            <li>Restart Firefox Mobile</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>📱 Chrome Mobile (Android/iOS):</h5>
+                        <ol>
+                            <li>Tap the three dots (⋮) in the top-right</li>
+                            <li>Select "Settings" → "Site settings" → "JavaScript"</li>
+                            <li>Make sure JavaScript is enabled</li>
+                            <li>Go back to Settings → "Privacy and security"</li>
+                            <li>Extensions are usually managed through desktop Chrome</li>
+                        </ol>
+                    </div>
+
+                    <div class="browser-guide">
+                        <h5>🍎 Safari (iOS):</h5>
+                        <ol>
+                            <li>Go to Settings → Safari → Extensions</li>
+                            <li>Find <strong>${extensionName}</strong> and toggle it off</li>
+                            <li>Or tap "Delete" to remove completely</li>
+                            <li>Close and reopen Safari</li>
+                        </ol>
+                    </div>
+
+                    <div class="troubleshooting">
+                        <h5>🔧 If Still Not Working:</h5>
+                        <ul>
+                            <li>Try switching to a different browser</li>
+                            <li>Clear browser data and cache</li>
+                            <li>Restart your device</li>
+                            <li>Use incognito/private browsing mode</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
         }
 
         // Store original API references for comparison
