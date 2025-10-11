@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid #00FF9D;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2rem;
+            color: #ff6b6b;
+            text-align: center;
+            padding: 2rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .player-container {
+            flex-grow: 1;
+            background-color: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .controls {
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .provider-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .provider-btn:hover,
+        .provider-btn.active {
+            background: #00FF9D;
+            color: #000;
+            border-color: #00FF9D;
+        }
+
+        .retry-btn {
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+
+        .retry-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading movie player...</p>
+    </div>
+
+    <div id="error" class="error" style="display: none;">
+        <h3>⚠️ Error Loading Movie</h3>
+        <p>Could not load the movie player. Please try again.</p>
+        <button id="retryBtn" class="retry-btn">Retry</button>
+    </div>
+
+    <div id="playerContainer" class="player-container" style="display: none;">
+        <div class="controls">
+            <span id="movieTitle">Loading...</span>
+            <div id="providerButtons"></div>
+        </div>
+        <iframe id="moviePlayer" allowfullscreen allow="autoplay"></iframe>
+    </div>
+
+    <script>
+        // Get movie parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieId = urlParams.get('id');
+        const mode = urlParams.get('mode') || 'movie';
+        const season = urlParams.get('season') || '1';
+        const episode = urlParams.get('episode') || '1';
+
+        const moviePlayer = document.getElementById('moviePlayer');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const playerContainer = document.getElementById('playerContainer');
+        const movieTitle = document.getElementById('movieTitle');
+        const providerButtonsContainer = document.getElementById('providerButtons');
+        const retryBtn = document.getElementById('retryBtn');
+
+        let currentProvider = 'vidora.su'; // Default provider
+
+        // List of available providers
+        const providers = {
+            'vidora.su': 'Alpha',
+            'autoembed.pro': 'Bravo',
+            'vidrock.net': 'Charlie',
+            '111movies': 'Delta',
+            'vidsrc': 'Echo',
+            'vidsrc.to': 'Foxtrot',
+            'moviemaze.cc': 'Golf',
+            'vidlink': 'Hotel',
+            'vixsrc.to': 'India'
+        };
+
+        function generateStreamUrl(provider, id, mode, season, episode) {
+            if (mode === 'movie') {
+                switch (provider) {
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/movie/${id}`;
+                    case 'vidsrc.to': return `https://vidsrc.to/embed/movie/${id}`;
+                    case 'autoembed.pro': return `https://autoembed.pro/embed/movie/${id}`;
+                    case '111movies': return `https://111movies.com/movie/${id}`;
+                    case 'moviemaze.cc': return `https://moviemaze.cc/watch/movie/${id}`;
+                    case 'vidora.su': return `https://vidora.su/movie/${id}`;
+                    case 'vidlink': return `https://vidlink.pro/movie/${id}`;
+                    case 'vidrock.net': return `https://vidrock.net/movie/${id}`;
+                    case 'vixsrc.to': return `https://vixsrc.to/movie/${id}/`;
+                    default: return `https://vidsrc.cc/v2/embed/movie/${id}`;
+                }
+            } else { // tv
+                switch (provider) {
+                    case 'vidsrc': return `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`;
+                    case 'vidsrc.to': return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`;
+                    case 'autoembed.pro': return `https://autoembed.pro/embed/tv/${id}?season=${season}&episode=${episode}`;
+                    case '111movies': return `https://111movies.com/tv/${id}/${season}/${episode}`;
+                    case 'moviemaze.cc': return `https://moviemaze.cc/watch/tv/${id}?ep=${episode}&season=${season}`;
+                    case 'vidora.su': return `https://vidora.su/tv/${id}/${season}/${episode}`;
+                    case 'vidlink': return `https://vidlink.pro/tv/${id}/${season}/${episode}`;
+                    case 'vidrock.net': return `https://vidrock.net/tv/${id}/${season}/${episode}`;
+                    case 'vixsrc.to': return `https://vixsrc.to/tv/${id}/${season}/${episode}/`;
+                    default: return `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`;
+                }
+            }
+        }
+
+        async function loadMovie(provider = currentProvider) {
+            if (!movieId) {
+                showError();
+                return;
+            }
+
+            try {
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                playerContainer.style.display = 'none';
+
+                const streamUrl = generateStreamUrl(provider, movieId, mode, season, episode);
+
+                // Set iframe src after a short delay to ensure it loads properly
+                setTimeout(() => {
+                    moviePlayer.src = streamUrl;
+                    loadingDiv.style.display = 'none';
+                    playerContainer.style.display = 'block';
+
+                    // Update movie title if available
+                    if (mode === 'movie') {
+                        movieTitle.textContent = `Movie ID: ${movieId}`;
+                    } else {
+                        movieTitle.textContent = `TV Show ID: ${movieId} - S${season}E${episode}`;
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error loading movie:', error);
+                showError();
+            }
+        }
+
+        function showError() {
+            loadingDiv.style.display = 'none';
+            playerContainer.style.display = 'none';
+            errorDiv.style.display = 'block';
+        }
+
+        function setupProviderButtons() {
+            providerButtonsContainer.innerHTML = Object.entries(providers)
+                .map(([value, name]) =>
+                    `<button class="provider-btn ${value === currentProvider ? 'active' : ''}" data-provider="${value}">${name}</button>`
+                ).join('');
+
+            providerButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('provider-btn')) {
+                    document.querySelectorAll('.provider-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentProvider = e.target.dataset.provider;
+                    loadMovie(currentProvider);
+                }
+            });
+        }
+
+        // Initialize player
+        document.addEventListener('DOMContentLoaded', () => {
+            setupProviderButtons();
+            retryBtn.addEventListener('click', () => loadMovie(currentProvider));
+            loadMovie();
+        });
+
+        // Handle iframe load errors
+        moviePlayer.addEventListener('error', () => {
+            showError();
+        });
+    </script>
+</body>
+</html>
