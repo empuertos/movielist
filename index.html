@@ -1608,9 +1608,38 @@
     </div>
 
     <script>
-        // Configuration
+        // Configuration with fallback API URLs
+        const API_URLS = [
+            'https://streamflix.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev',
+            'https://api.themoviedb.org/3',
+            // Add alternative endpoints here as fallbacks
+            // 'https://your-backup-api.workers.dev',
+            // 'http://localhost:8787'  // For local development
+        ];
+
+        let API_URL;
         const IMG_URL = 'https://image.tmdb.org/t/p/w500';
-        const API_URL = 'https://streamflix.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev';
+
+        // Test API URLs and use the first working one
+        async function initializeApiUrl() {
+            for (let i = 0; i < API_URLS.length; i++) {
+                try {
+                    const testUrl = `${API_URLS[i]}/movie/popular?page=1`;
+                    const response = await fetch(testUrl);
+                    if (response.ok) {
+                        API_URL = API_URLS[i];
+                        console.log(`Using API URL: ${API_URL}`);
+                        return;
+                    }
+                } catch (error) {
+                    console.warn(`API URL ${API_URLS[i]} failed:`, error);
+                }
+            }
+
+            // If all URLs fail, use the first one as fallback
+            API_URL = API_URLS[0];
+            console.warn(`All API URLs failed, using fallback: ${API_URL}`);
+        }
 
         // State variables
         let currentPage = 1;
@@ -1723,7 +1752,10 @@
         }
 
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize API URL first
+            await initializeApiUrl();
+
             const urlParams = new URLSearchParams(window.location.search);
             const shareId = urlParams.get('id');
             const shareMode = urlParams.get('mode');
@@ -2032,10 +2064,6 @@
             episodeSelect.value = '1';
         }
 
-        // Function to stop video and audio
-        function stopVideo() {
-            // This function is now a placeholder, as video plays in a new tab.
-        }
 
         // Handle search
         function handleSearch() {
@@ -2199,9 +2227,9 @@
             const title = itemMode === 'movie' ? item.title : item.name;
             const date = itemMode === 'movie' ? item.release_date : item.first_air_date;
             const posterPath = item.poster_path ? `${IMG_URL}${item.poster_path}` : 'https://via.placeholder.com/300x450/1a1a2e/00FF9D?text=No+Image';
-            
+
             card.innerHTML = `
-                <img src="${posterPath}" alt="${title}" class="card-img">
+                <img src="${posterPath}" alt="${title}" class="card-img" loading="lazy" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450/1a1a2e/00FF9D?text=No+Image';">
                 <div class="card-content">
                     <h3 class="card-title" title="${title}">${title}</h3>
                     <div class="card-info">
@@ -2210,13 +2238,22 @@
                     </div>
                 </div>
             `;
-            
+
+            // Add error handling for image loading
+            const img = card.querySelector('.card-img');
+            img.addEventListener('error', function() {
+                // Try alternative image sources if primary fails
+                if (this.src.includes('image.tmdb.org')) {
+                    this.src = 'https://via.placeholder.com/300x450/1a1a2e/00FF9D?text=No+Image';
+                }
+            });
+
             card.addEventListener('click', (e) => {
                 // Set mode before showing details, especially for history items
                 currentMode = itemMode;
                 showDetails(item.id);
             });
-            
+
             return card;
         }
 
@@ -2350,94 +2387,96 @@
 
         function generatePlayerPageHTML() {
             const title = currentMode === 'movie' ? currentItem.title : `${currentItem.name} - S${currentSeason}E${currentEpisode}`;
-            return `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Now Playing: ${title}</title>
-                    <style>
-                        :root { --primary: #00FF9D; --secondary: #1a1a2e; --dark: #16213e; --text: #e6e6e6; --accent: #ff2e63; }
-                        body { background-color: var(--secondary); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-                        .player-header { background-color: var(--dark); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-                        .header-controls { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-                        .provider-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-                        .provider-btn { background: var(--secondary); border: 1px solid #444; color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
-                        .provider-btn.active { background: var(--primary); color: var(--secondary); border-color: var(--primary); font-weight: 600; }
-                        .action-btn { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid #555; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; font-weight: 600; }
-                        .close-btn { background-color: var(--accent); border-color: var(--accent); color: white; }
-                        .player-container { flex-grow: 1; background-color: #000; }
-                        iframe { width: 100%; height: 100%; border: none; }
-                    </style>
-                </head>
-                <body>
-                    <div class="player-header">
-                        <div class="header-controls">
-                             <button id="refreshBtn" class="action-btn">Refresh Stream</button>
-                             <button id="closeBtn" class="action-btn close-btn">&times; Close Player</button>
-                        </div>
-                        <div id="providerButtons" class="provider-buttons"></div>
-                    </div>
-                    <div class="player-container">
-                        <iframe id="streamingIframe" allowfullscreen allow="autoplay"></iframe>
-                    </div>
-                    <script>
-                        const playerData = JSON.parse(localStorage.getItem('streamflixPlayerData'));
-                        const { item, mode, season, episode } = playerData;
-                        const providerButtonsContainer = document.getElementById('providerButtons');
-                        const streamingIframe = document.getElementById('streamingIframe');
-                        const refreshBtn = document.getElementById('refreshBtn');
-                        const closeBtn = document.getElementById('closeBtn');
-                        let currentProvider = 'vidora.su'; // Default provider
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Now Playing: ${title}</title>
+    <style>
+        :root { --primary: #00FF9D; --secondary: #1a1a2e; --dark: #16213e; --text: #e6e6e6; --accent: #ff2e63; }
+        body { background-color: var(--secondary); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .player-header { background-color: var(--dark); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .provider-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .provider-btn { background: var(--secondary); border: 1px solid #444; color: var(--text); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .provider-btn.active { background: var(--primary); color: var(--secondary); border-color: var(--primary); font-weight: 600; }
+        .action-btn { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid #555; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        .close-btn { background-color: var(--accent); border-color: var(--accent); color: white; }
+        .player-container { flex-grow: 1; background-color: #000; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <div class="player-header">
+        <div class="header-controls">
+            <button id="refreshBtn" class="action-btn">Refresh Stream</button>
+            <button id="closeBtn" class="action-btn close-btn">&times; Close Player</button>
+        </div>
+        <div id="providerButtons" class="provider-buttons"></div>
+    </div>
+    <div class="player-container">
+        <iframe id="streamingIframe" allowfullscreen allow="autoplay"></iframe>
+    </div>
+    <script>
+        const playerData = JSON.parse(localStorage.getItem('streamflixPlayerData'));
+        const { item, mode, season, episode } = playerData;
+        const providerButtonsContainer = document.getElementById('providerButtons');
+        const streamingIframe = document.getElementById('streamingIframe');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        let currentProvider = 'vidora.su'; // Default provider
 
-                        async function loadStream(provider) {
-                            const apiUrl = '${API_URL}';
-                            const params = new URLSearchParams({ provider, id: item.id, mode, season, episode });
-                            const response = await fetch(\`\${apiUrl}/stream?\${params}\`);
-                            const data = await response.json();
-                            const url = data.url;
+        async function loadStream(provider) {
+            const apiUrl = '${API_URL}';
+            const params = new URLSearchParams({ provider: provider, id: item.id, mode: mode, season: season, episode: episode });
+            const response = await fetch(apiUrl + '/stream?' + params);
+            const data = await response.json();
+            const url = data.url;
 
-                            // Force reload by setting src to blank first
-                            streamingIframe.src = 'about:blank';
-                            if (url) {
-                                setTimeout(() => { streamingIframe.src = url; }, 50);
-                            } else {
-                                streamingIframe.contentDocument.body.innerHTML = '<h3 style="color: red;">Could not load stream.</h3>';
-                            }
-                        }
+            // Force reload by setting src to blank first
+            streamingIframe.src = 'about:blank';
+            if (url) {
+                setTimeout(() => { streamingIframe.src = url; }, 50);
+            } else {
+                streamingIframe.contentDocument.body.innerHTML = '<h3 style="color: red;">Could not load stream.</h3>';
+            }
+        }
 
-                        async function setupPlayer() {
-                            const apiUrl = '${API_URL}';
-                            const response = await fetch(`${API_URL}/providers`);
-                            const providers = await response.json();
+        async function setupPlayer() {
+            try {
+                const response = await fetch('${API_URL}/providers');
+                const providers = await response.json();
 
-                            // Populate buttons and set up listeners
-                            providerButtonsContainer.innerHTML = Object.entries(providers)
-                                .map(([value, name]) => `<button class="provider-btn ${value === currentProvider ? 'active' : ''}" data-provider="${value}">${name}</button>`)
-                                .join('');
+                // Populate buttons and set up listeners
+                providerButtonsContainer.innerHTML = Object.entries(providers)
+                    .map(([value, name]) => '<button class="provider-btn ' + (value === currentProvider ? 'active' : '') + '" data-provider="' + value + '">' + name + '</button>')
+                    .join('');
 
-                            providerButtonsContainer.addEventListener('click', (e) => {
-                                if (e.target.classList.contains('provider-btn')) {
-                                    document.querySelector('.provider-btn.active')?.classList.remove('active');
-                                    e.target.classList.add('active');
-                                    currentProvider = e.target.dataset.provider;
-                                    loadStream(currentProvider);
-                                }
-                            });
+                providerButtonsContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('provider-btn')) {
+                        document.querySelector('.provider-btn.active')?.classList.remove('active');
+                        e.target.classList.add('active');
+                        currentProvider = e.target.dataset.provider;
+                        loadStream(currentProvider);
+                    }
+                });
 
-                            refreshBtn.addEventListener('click', () => loadStream(currentProvider));
-                            closeBtn.addEventListener('click', () => window.close());
+                refreshBtn.addEventListener('click', () => loadStream(currentProvider));
+                closeBtn.addEventListener('click', () => window.close());
 
-                            // Load default provider
-                            loadStream(currentProvider);
-                        }
+                // Load default provider
+                loadStream(currentProvider);
+            } catch (error) {
+                console.error('Error setting up player:', error);
+                streamingIframe.contentDocument.body.innerHTML = '<h3 style="color: red;">Error loading player. Please refresh the page.</h3>';
+            }
+        }
 
-                        setupPlayer();
-                    <\/script>
-                </body>
-                </html>
-            `;
+        setupPlayer();
+    </script>
+</body>
+</html>`;
         }
 
         // Fetch hero movies for slideshow
@@ -2505,4 +2544,5 @@
 
     </script>
 </body>
-</html>
+</html>`;
+        }
