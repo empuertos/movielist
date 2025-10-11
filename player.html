@@ -51,7 +51,20 @@
             .controls {
                 padding: 0.5rem;
                 gap: 0.5rem;
-                flex-wrap: wrap;
+                flex-direction: column;
+            }
+
+            .left-controls,
+            .right-controls {
+                width: 100%;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+
+            .control-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+                min-height: 36px;
             }
 
             .provider-btn {
@@ -188,9 +201,44 @@
             padding: 1rem;
             background-color: rgba(0, 0, 0, 0.8);
             display: flex;
-            gap: 1rem;
+            justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .left-controls,
+        .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .control-btn:hover {
+            background: #00FF9D;
+            color: #000;
+            border-color: #00FF9D;
+            transform: translateY(-2px);
+        }
+
+        .control-btn i {
+            font-size: 0.8rem;
         }
 
         .provider-btn {
@@ -425,8 +473,15 @@
 
     <div id="playerContainer" class="player-container" style="display: none;">
         <div class="controls">
-            <span id="movieTitle">Loading...</span>
-            <div id="providerButtons"></div>
+            <div class="left-controls">
+                <span id="movieTitle">Loading...</span>
+            </div>
+            <div class="right-controls">
+                <button id="refreshBtn" class="control-btn" title="Refresh Player">
+                    <i class="fas fa-redo"></i> Refresh
+                </button>
+                <div id="providerButtons"></div>
+            </div>
         </div>
         <iframe id="moviePlayer" allowfullscreen allow="autoplay" style="border: none; width: 100%; height: 100%; visibility: hidden;"></iframe>
     </div>
@@ -514,6 +569,7 @@
         const movieTitle = document.getElementById('movieTitle');
         const providerButtonsContainer = document.getElementById('providerButtons');
         const retryBtn = document.getElementById('retryBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
 
         let currentProvider = 'vidora.su'; // Default provider
 
@@ -726,17 +782,40 @@
             }
         }
 
+        // Refresh functionality
+        function refreshPlayer() {
+            console.log('Refreshing player...');
+
+            // Show loading state
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            playerContainer.style.display = 'none';
+
+            // Reset retry count
+            retryCount = 0;
+
+            // Reload the movie with current provider
+            setTimeout(() => {
+                loadMovie(currentProvider);
+            }, 500);
+        }
+
         // Initialize player
         document.addEventListener('DOMContentLoaded', () => {
             setupProviderButtons();
 
+            // Retry button (for errors)
             retryBtn.addEventListener('click', () => {
-                retryCount = 0; // Reset retry count
+                retryCount = 0;
                 loadMovie(currentProvider);
             });
 
+            // Refresh button (manual refresh)
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', refreshPlayer);
+            }
+
             // Enhanced error handling with auto-retry
-            const originalErrorHandler = moviePlayer.onerror;
             moviePlayer.addEventListener('error', () => {
                 if (retryCount < maxRetries) {
                     retryCount++;
