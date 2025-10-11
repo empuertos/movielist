@@ -1807,7 +1807,8 @@
                     season: currentSeason,
                     episode: currentEpisode
                 });
-                window.open(`https://streamflix.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?${movieParams}`, '_blank');
+                // Redirect to player page on same domain instead of external link
+                window.location.href = `/player?${movieParams}`;
             });
 
             // Clear History button (inside settings)
@@ -1857,7 +1858,8 @@
                         season: 1,
                         episode: 1
                     });
-                    window.open(`https://streamflix.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/?${movieParams}`, '_blank');
+                    // Redirect to player page on same domain
+                    window.location.href = `/player?${movieParams}`;
                 }
             });
             moreInfoBtn.addEventListener('click', () => {
