@@ -1785,6 +1785,7 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            // Only show install modal on mobile devices, not desktop
             if (isMobile()) {
                 showInstallModal();
             }
