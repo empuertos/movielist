@@ -391,6 +391,21 @@ h2{margin-left:10px;font-size:16px}
   background: #e50914;
   border-color: #e50914;
 }
+
+/* Load More Button Styles */
+.load-more-btn {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  padding: 10px 25px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.3s;
+  display: none; /* Hidden by default */
+}
+.load-more-btn:hover { background: #555; }
 </style>
 <script>
 // IMPORTANT: Replace this with your own Cloudflare Worker URL after deploying it.
@@ -430,7 +445,8 @@ const WORKER_URL = 'https://movielist.22afed28-f0b2-46d0-8804-c90e25c90bd4.worke
   <h2 style="color: white; margin-left: 10px;">Most Popular Movies</h2>
   <div id="popularMoviesGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 200px;"></div>
   <div id="popularMoviesLoader" style="text-align: center; padding: 20px;">
-      <div class="loader"></div>
+    <div class="loader"></div>
+    <button id="loadMoreMoviesBtn" class="load-more-btn">Load More</button>
   </div>
 </section>
 
@@ -438,7 +454,8 @@ const WORKER_URL = 'https://movielist.22afed28-f0b2-46d0-8804-c90e25c90bd4.worke
   <h2 style="color: white; margin-left: 10px;">Most Popular TV Shows</h2>
   <div id="popularTvShowsGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 200px;"></div>
   <div id="popularTvShowsLoader" style="text-align: center; padding: 20px;">
-      <div class="loader"></div>
+    <div class="loader"></div>
+    <button id="loadMoreTvShowsBtn" class="load-more-btn">Load More</button>
   </div>
 </section>
 
@@ -559,64 +576,6 @@ function clearFavorites() {
   }
 }
 
-class InfiniteScroll {
-  constructor({ gridId, loaderId, mediaType }) {
-    this.grid = document.getElementById(gridId);
-    this.loader = document.getElementById(loaderId);
-    this.mediaType = mediaType;
-
-    this.currentPage = 1;
-    this.totalPages = Infinity;
-    this.isLoading = false;
-
-    if (!this.grid || !this.loader) {
-      console.error(`InfiniteScroll: Grid or Loader element not found for ${gridId}/${loaderId}`);
-      return;
-    }
-
-    this.init();
-  }
-
-  init() {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !this.isLoading) {
-        this.fetchAndRender();
-      }
-    }, { rootMargin: '0px 0px 400px 0px' });
-
-    observer.observe(this.loader);
-    this.fetchAndRender(); // Initial fetch
-  }
-
-  async fetchAndRender() {
-    if (this.isLoading || this.currentPage > this.totalPages) return;
-
-    this.isLoading = true;
-    this.loader.querySelector('.loader').style.display = 'block';
-
-    try {
-      const response = await fetch(`${WORKER_URL}?popular=true&media_type=${this.mediaType}&page=${this.currentPage}`);
-      if (!response.ok) throw new Error(`Failed to fetch popular ${this.mediaType} list.`);
-
-      const data = await response.json();
-      this.totalPages = data.total_pages;
-
-      data.results.forEach(item => {
-        if (item.id && item.poster_path) {
-          this.grid.appendChild(createMovieCard({ ...item, media_type: this.mediaType }));
-        }
-      });
-
-      this.currentPage++;
-    } catch (error) {
-      console.error(`Failed to load popular ${this.mediaType}:`, error);
-    } finally {
-      this.isLoading = false;
-      if (this.currentPage > this.totalPages) this.loader.style.display = 'none';
-    }
-  }
-}
-
 // --- Settings Panel Functionality ---
 
 const settingsConfig = {
@@ -696,9 +655,9 @@ async function renderGenreButtons() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize infinite scroll for movies and TV shows
-  new InfiniteScroll({ gridId: 'popularMoviesGrid', loaderId: 'popularMoviesLoader', mediaType: 'movie' });
-  new InfiniteScroll({ gridId: 'popularTvShowsGrid', loaderId: 'popularTvShowsLoader', mediaType: 'tv' });
+  // Initialize paginated sections for movies and TV shows
+  new PaginatedSection({ gridId: 'popularMoviesGrid', loaderId: 'popularMoviesLoader', buttonId: 'loadMoreMoviesBtn', mediaType: 'movie' });
+  new PaginatedSection({ gridId: 'popularTvShowsGrid', loaderId: 'popularTvShowsLoader', buttonId: 'loadMoreTvShowsBtn', mediaType: 'tv' });
 
   renderFavorites(); // Render favorites on page load
 
