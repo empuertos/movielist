@@ -375,6 +375,22 @@ h2{margin-left:10px;font-size:16px}
   padding: 15px 0;
   border-bottom: 1px solid #333;
 }
+
+/* Genre Section Styles */
+.genre-btn {
+  background: #222;
+  color: #eee;
+  border: 1px solid #444;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+.genre-btn:hover {
+  background: #e50914;
+  border-color: #e50914;
+}
 </style>
 <script>
 // IMPORTANT: Replace this with your own Cloudflare Worker URL after deploying it.
@@ -397,6 +413,13 @@ const WORKER_URL = 'https://movielist.22afed28-f0b2-46d0-8804-c90e25c90bd4.worke
   </div>
   <div id="favoritesGrid" style="display: flex; overflow-x: auto; gap: 10px; padding: 15px; scroll-behavior: smooth;">
     <!-- Favorite items will be rendered here -->
+  </div>
+</section>
+
+<section id="genreSection" style="margin: 20px;">
+  <h2 style="color: white; margin-left: 10px;">Browse by Genre</h2>
+  <div id="genreGrid" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 15px; justify-content: center;">
+    <!-- Genre buttons will be rendered here -->
   </div>
 </section>
 
@@ -653,6 +676,25 @@ function handleSettingChange(key, isChecked) {
   applySettings();
 }
 
+// --- Genre Browsing Functionality ---
+
+async function renderGenreButtons() {
+  try {
+    const response = await fetch(`${WORKER_URL}?action=getGenres&media_type=movie`);
+    const data = await response.json();
+    const genreGrid = document.getElementById('genreGrid');
+    
+    if (data.genres) {
+      genreGrid.innerHTML = data.genres.map(genre => 
+        `<button class="genre-btn" onclick="showGenreResults(${genre.id}, '${genre.name}')">${genre.name}</button>`
+      ).join('');
+    }
+  } catch (error) {
+    console.error('Failed to load genres:', error);
+  }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize infinite scroll for movies and TV shows
   new InfiniteScroll({ gridId: 'popularMoviesGrid', loaderId: 'popularMoviesLoader', mediaType: 'movie' });
@@ -675,6 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
   for (const key in settingsConfig) {
     document.getElementById(settingsConfig[key].checkboxId).addEventListener('change', (e) => handleSettingChange(key, e.target.checked));
   }
+
+  // Load genres
+  renderGenreButtons();
 });
 </script>
 
@@ -740,9 +785,11 @@ class SearchManager {
 
     // Dropdown click handler
     document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('dropdown-item')) {
-        this.handleDropdownItemClick(e.target);
-      } else if (!document.querySelector('.search-container').contains(e.target)) {
+      // Find the closest dropdown-item parent from the clicked element
+      const dropdownItem = e.target.closest('.dropdown-item');
+      if (dropdownItem) {
+        this.handleDropdownItemClick(dropdownItem);
+      } else if (!this.searchInput.contains(e.target) && !this.dropdown.contains(e.target)) {
         this.hideDropdown();
       }
     });
@@ -973,6 +1020,43 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
     <div id="movieDetailsBody" class="movie-details-body">
       <!-- Movie details will be populated here -->
+    </div>
+  </div>
+</div>
+
+<!-- Settings Panel Modal -->
+<div id="settingsPanel" class="movie-details-modal">
+  <div class="movie-details-content" style="max-width: 500px;">
+    <div class="movie-details-header">
+      <h3>Settings</h3>
+      <span class="close-details-modal" onclick="closeSettingsPanel()">&times;</span>
+    </div>
+    <ul class="settings-list">
+      <li class="settings-item">
+        <label for="settingShowFavorites">Show "My Favorites"</label>
+        <input type="checkbox" id="settingShowFavorites">
+      </li>
+      <li class="settings-item">
+        <label for="settingShowPopularMovies">Show "Popular Movies"</label>
+        <input type="checkbox" id="settingShowPopularMovies">
+      </li>
+      <li class="settings-item">
+        <label for="settingShowPopularTvShows">Show "Popular TV Shows"</label>
+        <input type="checkbox" id="settingShowPopularTvShows">
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Genre Results Modal -->
+<div id="genreResultsModal" class="movie-details-modal">
+  <div class="movie-details-content">
+    <div class="movie-details-header">
+      <h3 id="genreResultsTitle">Genre Results</h3>
+      <span class="close-details-modal" onclick="closeGenreResultsModal()">&times;</span>
+    </div>
+    <div id="genreResultsGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 70vh; overflow-y: auto;">
+      <!-- Genre results will be populated here -->
     </div>
   </div>
 </div>
@@ -1347,6 +1431,37 @@ async function generateEmbedUrl(provider, imdbId, type) {
   }
 }
 
+async function showGenreResults(genreId, genreName) {
+  const modal = document.getElementById('genreResultsModal');
+  const title = document.getElementById('genreResultsTitle');
+  const grid = document.getElementById('genreResultsGrid');
+
+  title.textContent = `Popular in ${genreName}`;
+  grid.innerHTML = '<div class="loader" style="display: block; margin: 50px auto;"></div>';
+  modal.classList.add('modal-open');
+
+  try {
+    const response = await fetch(`${WORKER_URL}?action=discover&media_type=movie&genre=${genreId}`);
+    const data = await response.json();
+    grid.innerHTML = ''; // Clear loader
+
+    if (data.results && data.results.length > 0) {
+      data.results.forEach(item => {
+        grid.appendChild(createMovieCard({ ...item, media_type: 'movie' }));
+      });
+    } else {
+      grid.innerHTML = '<p>No movies found for this genre.</p>';
+    }
+  } catch (error) {
+    console.error('Failed to fetch genre results:', error);
+    grid.innerHTML = '<p>Could not load results. Please try again.</p>';
+  }
+}
+
+function closeGenreResultsModal() {
+  document.getElementById('genreResultsModal').classList.remove('modal-open');
+}
+
 // Close modal on Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
@@ -1354,6 +1469,7 @@ document.addEventListener('keydown', function(e) {
     closeProviderModal();
     closeVideoPlayerModal();
     closeSettingsPanel();
+    closeGenreResultsModal();
   }
 });
 
