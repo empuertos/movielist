@@ -1193,7 +1193,7 @@ async function selectProvider(provider, imdbId, type, title, useSandbox) {
 
     // Apply sandbox setting from the worker
     if (useSandbox) {
-      videoFrame.setAttribute('sandbox', 'allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation');
+      videoFrame.setAttribute('sandbox', 'allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation allow-popups allow-popups-to-escape-sandbox');
     } else {
       videoFrame.removeAttribute('sandbox');
     }
