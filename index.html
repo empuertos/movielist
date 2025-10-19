@@ -565,6 +565,26 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            .last-viewed-container {
+                position: relative;
+            }
+            .last-viewed-row {
+                width: 100%;
+                overflow-x: auto;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .last-viewed-row::-webkit-scrollbar {
+                display: none;
+            }
+            .arrow {
+                display: none; /* Hide arrows on mobile, use swipe */
+            }
+            .last-viewed-row {
+                width: 100%;
+            }
             .modal-content {
                 width: 95%;
                 padding: 15px;
