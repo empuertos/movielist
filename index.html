@@ -4,6 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MovieList</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e50914">
+    <script>
+        // Detect if device is mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        }
+
+        // Show install prompt only on mobile
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            if (!isMobile()) {
+                e.preventDefault();
+                return;
+            }
+            e.preventDefault();
+            deferredPrompt = e;
+            // Optionally show a custom install button
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            const installBtn = document.createElement('button');
+            installBtn.textContent = 'Install App';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #e50914;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 1000;
+            `;
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                        }
+                        deferredPrompt = null;
+                        installBtn.remove();
+                    });
+                }
+            });
+            document.body.appendChild(installBtn);
+        }
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
