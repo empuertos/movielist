@@ -1230,7 +1230,7 @@
             document.body.insertAdjacentHTML('beforeend', html);
 
             // Add event listener to close button
-            const closeStreamingBtn = document.getElementById('close-streaming');
+            const closeStreamingBtn = document.querySelector('#close-streaming, .close-streaming');
             if (closeStreamingBtn) {
                 closeStreamingBtn.addEventListener('click', () => {
                     const streamingContainer = document.querySelector('.streaming-container');
