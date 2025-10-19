@@ -394,6 +394,17 @@
             justify-content: center;
             align-items: center;
         }
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 3000;
+        }
         .close-streaming {
             position: absolute;
             top: 10px;
@@ -648,7 +659,24 @@
     <script>
         const workerUrl = 'https://movielist.22afed28-f0b2-46d0-8804-c90e25c90bd4.workers.dev/';
 
+        // Image caching functions
+        async function loadImageToCache(url, key) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onload = () => {
+                    localStorage.setItem(key, reader.result);
+                };
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error('Error caching image:', error);
+            }
+        }
 
+        function getCachedImage(key) {
+            return localStorage.getItem(key);
+        }
 
         let popularPage = 1;
         let popularMovies = [];
@@ -837,10 +865,17 @@
             movies.forEach(movie => {
                 const movieCard = document.createElement('div');
                 movieCard.className = 'movie-card';
+                const imgSrc = getCachedImage(`poster_${movie.id}`) || `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
                 movieCard.innerHTML = `
-                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title || movie.name}">
+                    <img src="${imgSrc}" alt="${movie.title || movie.name}" data-movie-id="${movie.id}">
                     <h3>${movie.title || movie.name}</h3>
                 `;
+                const img = movieCard.querySelector('img');
+                img.addEventListener('load', () => {
+                    if (!getCachedImage(`poster_${movie.id}`)) {
+                        loadImageToCache(img.src, `poster_${movie.id}`);
+                    }
+                });
                 movieCard.addEventListener('click', () => {
                     openMovieModal(movie);
                 });
@@ -1226,8 +1261,31 @@
             // Close provider modal
             closeProviderModal();
 
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-indicator';
+            loadingDiv.textContent = 'Loading video...';
+            document.body.appendChild(loadingDiv);
+
             // Insert the iframe HTML into the body
             document.body.insertAdjacentHTML('beforeend', html);
+
+            // Find the iframe and hide loading when it loads
+            const iframe = document.querySelector('#streamingIframe');
+            if (iframe) {
+                iframe.addEventListener('load', () => {
+                    loadingDiv.remove();
+                });
+                // Fallback: hide loading after 5 seconds if load event doesn't fire
+                setTimeout(() => {
+                    if (document.body.contains(loadingDiv)) {
+                        loadingDiv.remove();
+                    }
+                }, 5000);
+            } else {
+                // If no iframe found, hide loading immediately
+                loadingDiv.remove();
+            }
 
             // Add event listener to close button
             const closeStreamingBtn = document.querySelector('#close-streaming, .close-streaming');
@@ -1236,6 +1294,10 @@
                     const streamingContainer = document.querySelector('.streaming-container');
                     if (streamingContainer) {
                         streamingContainer.remove();
+                    }
+                    // Also remove loading if still present
+                    if (document.body.contains(loadingDiv)) {
+                        loadingDiv.remove();
                     }
                 });
             }
