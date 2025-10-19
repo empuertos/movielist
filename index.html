@@ -104,6 +104,40 @@
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
         }
+        .last-viewed-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .last-viewed-row {
+            display: flex;
+            gap: 20px;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            width: calc(100% - 80px); /* Account for arrow buttons */
+        }
+        .arrow {
+            background-color: #e50914;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        .arrow:hover {
+            background-color: #f40612;
+        }
+        .arrow:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
         .movie-card {
             background-color: #333;
             border-radius: 8px;
@@ -498,7 +532,11 @@
     </div>
     <div class="section">
         <h2>Last Viewed</h2>
-        <div id="last-viewed" class="movie-grid"></div>
+        <div class="last-viewed-container">
+            <button class="arrow left-arrow" id="left-arrow"><</button>
+            <div id="last-viewed" class="last-viewed-row"></div>
+            <button class="arrow right-arrow" id="right-arrow">></button>
+        </div>
     </div>
     <div class="section">
         <h2>Movie Categories</h2>
@@ -1009,7 +1047,31 @@
         function displayLastViewed() {
             const lastViewed = JSON.parse(localStorage.getItem('lastViewed') || '[]');
             displayMovies(lastViewed, 'last-viewed');
+            updateArrowStates();
         }
+
+        // Update arrow button states
+        function updateArrowStates() {
+            const row = document.getElementById('last-viewed');
+            const leftArrow = document.getElementById('left-arrow');
+            const rightArrow = document.getElementById('right-arrow');
+            leftArrow.disabled = row.scrollLeft <= 0;
+            rightArrow.disabled = row.scrollLeft >= row.scrollWidth - row.clientWidth;
+        }
+
+        // Scroll left
+        document.getElementById('left-arrow').addEventListener('click', () => {
+            const row = document.getElementById('last-viewed');
+            row.scrollBy({ left: -200, behavior: 'smooth' });
+            setTimeout(updateArrowStates, 300);
+        });
+
+        // Scroll right
+        document.getElementById('right-arrow').addEventListener('click', () => {
+            const row = document.getElementById('last-viewed');
+            row.scrollBy({ left: 200, behavior: 'smooth' });
+            setTimeout(updateArrowStates, 300);
+        });
 
 
 
