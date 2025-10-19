@@ -112,9 +112,17 @@
         .last-viewed-row {
             display: flex;
             gap: 20px;
-            overflow-x: hidden;
+            overflow-x: auto;
             scroll-behavior: smooth;
             width: calc(100% - 80px); /* Account for arrow buttons */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        .last-viewed-row::-webkit-scrollbar {
+            display: none; /* Hide scrollbar on webkit browsers */
+        }
+        .last-viewed-row {
+            scrollbar-width: none; /* Hide scrollbar on Firefox */
+            -ms-overflow-style: none; /* Hide scrollbar on IE/Edge */
         }
         .arrow {
             background-color: #e50914;
@@ -373,6 +381,34 @@
             animation-duration: 1.5s;
             transform: scale(1.05);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .streaming-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .close-streaming {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e50914;
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 2001;
+        }
+        .close-streaming:hover {
+            background: #f40612;
         }
         .provider-list {
             display: grid;
@@ -1192,6 +1228,17 @@
 
             // Insert the iframe HTML into the body
             document.body.insertAdjacentHTML('beforeend', html);
+
+            // Add event listener to close button
+            const closeStreamingBtn = document.getElementById('close-streaming');
+            if (closeStreamingBtn) {
+                closeStreamingBtn.addEventListener('click', () => {
+                    const streamingContainer = document.querySelector('.streaming-container');
+                    if (streamingContainer) {
+                        streamingContainer.remove();
+                    }
+                });
+            }
         }
 
         // Close provider modal
