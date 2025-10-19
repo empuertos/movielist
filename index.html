@@ -570,6 +570,7 @@
             }
             .last-viewed-row {
                 width: 100%;
+                gap: 10px;
                 overflow-x: auto;
                 scroll-behavior: smooth;
                 -webkit-overflow-scrolling: touch;
@@ -579,11 +580,18 @@
             .last-viewed-row::-webkit-scrollbar {
                 display: none;
             }
+            .last-viewed-row .movie-card {
+                min-width: 100px;
+                flex-shrink: 0;
+            }
+            .last-viewed-row .movie-card img {
+                height: 150px;
+            }
+            .last-viewed-row .movie-card h3 {
+                font-size: 12px;
+            }
             .arrow {
                 display: none; /* Hide arrows on mobile, use swipe */
-            }
-            .last-viewed-row {
-                width: 100%;
             }
             .modal-content {
                 width: 95%;
